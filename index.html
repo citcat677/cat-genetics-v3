@@ -15,9 +15,10 @@
     .modal.active { display: flex; }
     .mini-game-area { position: relative; width: 300px; margin: 0 auto; height: 60px; }
     .runner { position: absolute; top: 0; font-size: 2rem; transition: left 0.05s linear; }
+    @media (min-width: 768px) { .mobile { font-size: 1.2rem; } }
   </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100" id="body">
 <div id="app" class="max-w-6xl mx-auto p-4"></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -25,16 +26,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // ================== ВАШ КОНФИГ ==================
-   const firebaseConfig = {
-  apiKey: "AIzaSyBn_cX9AC2I5sMaNuA_YQgrpDc2rghHLek",
-  authDomain: "cat-genetics-v3.firebaseapp.com",
-  projectId: "cat-genetics-v3",
-  storageBucket: "cat-genetics-v3.firebasestorage.app",
-  messagingSenderId: "492493018596",
-  appId: "1:492493018596:web:bdea24850713a471e263f1",
-  measurementId: "G-JHXL2NF6F1"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyBn_cX9AC2I5sMaNuA_YQgrpDc2rghHLek",
+    authDomain: "cat-genetics-v3.firebaseapp.com",
+    projectId: "cat-genetics-v3",
+    storageBucket: "cat-genetics-v3.firebasestorage.app",
+    messagingSenderId: "492493018596",
+    appId: "1:492493018596:web:bdea24850713a471e263f1",
+    measurementId: "G-JHXL2NF6F1"
+  };
 
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
@@ -51,7 +51,6 @@
 
   function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-  // Генетика
   const coatChances = {
     "черный x черный": { черный: 0.8, серый: 0.2 },
     "белый x белый": { белый: 0.9, серый: 0.1 },
@@ -108,14 +107,16 @@
   }
 
   let notifications = [];
-  function addNotification(msg) {
-    notifications.unshift({ message: msg, read: false, time: Date.now() });
+  function addNotification(msg, targetUid = null) {
+    const n = { message: msg, read: false, time: Date.now(), targetUid: targetUid || auth.currentUser?.uid };
+    notifications.unshift(n);
     updateNotifDot();
   }
   function updateNotifDot() {
     const dot = document.getElementById('notif-dot');
     if (!dot) return;
-    if (notifications.some(n => !n.read)) dot.classList.add('has-notifications');
+    const uid = auth.currentUser?.uid;
+    if (notifications.some(n => !n.read && n.targetUid === uid)) dot.classList.add('has-notifications');
     else dot.classList.remove('has-notifications');
   }
 
@@ -130,14 +131,40 @@
   function startClock() {
     if (gameTimeInterval) clearInterval(gameTimeInterval);
     gameTimeInterval = setInterval(() => {
-      const now = Date.now() + serverTimeOffset;
-      const total = Math.floor(now / 1000) % (24 * 60 * 60);
-      const h = Math.floor(total / 3600);
-      const m = Math.floor((total % 3600) / 60);
+      const realNow = Date.now() + serverTimeOffset;
+      const gameSeconds = Math.floor(realNow / 1000) * 60;
+      const totalMinutes = gameSeconds % (24 * 60);
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
       const icon = (h >= 21 || h < 6) ? '🌃' : '☀️';
       const el = document.getElementById('game-time');
-      if (el) el.innerHTML = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${icon}`;
+      if (el) el.innerHTML = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ${icon}`;
     }, 1000);
+  }
+
+  function chooseInterface() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+      <div class="bg-white p-8 rounded-lg text-center">
+        <h2 class="text-2xl font-bold mb-6">Выберите режим</h2>
+        <div class="flex gap-6 justify-center">
+          <button id="desktop-mode" class="text-4xl p-4 bg-gray-200 rounded-lg hover:bg-gray-300">💻</button>
+          <button id="mobile-mode" class="text-4xl p-4 bg-gray-200 rounded-lg hover:bg-gray-300">📱</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('desktop-mode').onclick = () => {
+      localStorage.setItem('interface', 'desktop');
+      document.body.classList.remove('mobile');
+      modal.remove();
+    };
+    document.getElementById('mobile-mode').onclick = () => {
+      localStorage.setItem('interface', 'mobile');
+      document.body.classList.add('mobile');
+      modal.remove();
+    };
   }
 
   function showLanding() {
@@ -152,7 +179,9 @@
       const p = document.getElementById('password').value;
       const n = document.getElementById('nickname').value || ('Игрок' + Math.floor(Math.random() * 10000));
       auth.signInWithEmailAndPassword(e, p)
-        .then(() => db.collection('users').doc(auth.currentUser.uid).update({ nickname: n }))
+        .then(() => {
+          db.collection('users').doc(auth.currentUser.uid).update({ nickname: n });
+        })
         .catch(err => document.getElementById('auth-error').innerText = err.message);
     };
     document.getElementById('signup-btn').onclick = () => {
@@ -167,16 +196,19 @@
     };
   }
 
-  // ================== ИГРОВОЙ ИНТЕРФЕЙС ==================
   function showGame(user) {
     const uid = user.uid;
     const isAdmin = user.email === 'katya2013sara1981@gmail.com';
     getServerTime().then(st => { serverTimeOffset = st - Date.now(); startClock(); });
 
-    app.innerHTML = `<div class="bg-white rounded-lg shadow p-4">
-      <div class="flex justify-between items-center mb-4">
+    if (!localStorage.getItem('interface')) chooseInterface();
+    else if (localStorage.getItem('interface') === 'mobile') document.body.classList.add('mobile');
+
+    app.innerHTML = `
+    <div class="bg-white rounded-lg shadow p-4 ${document.body.classList.contains('mobile') ? 'text-lg' : ''}">
+      <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
         <h1 class="text-2xl font-bold">🐱 Генетика котов</h1>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
           <div class="bg-gray-200 px-3 py-1 rounded-full text-sm font-mono" id="game-time"></div>
           <span id="coins-display" class="font-semibold"></span>
           <div id="notif-dot" class="notification-dot">
@@ -187,84 +219,30 @@
           <button id="logout-btn" class="bg-gray-500 text-white px-3 py-1 rounded">Выйти</button>
         </div>
       </div>
-      <div class="flex border-b mb-4">
+      <div class="flex border-b mb-4 flex-wrap gap-1">
         <button class="tab-link px-4 py-2 font-semibold bg-gray-200 rounded-tl-lg" data-tab="home">🏠 Дом</button>
-        <button class="tab-link px-4 py-2 font-semibold" data-tab="street">🌳 Улица (все коты)</button>
-        <button class="tab-link px-4 py-2 font-semibold" data-tab="park">🏞️ Парк (прогулка)</button>
+        <button class="tab-link px-4 py-2 font-semibold" data-tab="street">🌳 Улица</button>
+        <button class="tab-link px-4 py-2 font-semibold" data-tab="park">🏞️ Парк</button>
         <button class="tab-link px-4 py-2 font-semibold" data-tab="shop">🛒 Магазин</button>
         <button class="tab-link px-4 py-2 font-semibold rounded-tr-lg" data-tab="search">🔍 Поиск</button>
       </div>
-      <div id="home-content" class="tab-content active">
-        <h2 class="font-bold text-lg mb-2">Мои коты</h2>
-        <div id="my-cats" class="space-y-2"></div>
-        <button id="buy-cat-btn" class="mt-2 bg-purple-500 text-white px-3 py-1 rounded"></button>
-        <p id="home-capacity" class="text-sm text-gray-600 mt-2"></p>
-      </div>
-      <div id="street-content" class="tab-content">
-        <h2 class="font-bold text-lg mb-2">Все коты</h2>
-        <div id="all-cats" class="space-y-2 max-h-96 overflow-y-auto"></div>
-      </div>
-      <div id="park-content" class="tab-content">
-        <h2 class="font-bold text-lg mb-2">Парк (прогулка)</h2>
-        <div id="park-cats" class="space-y-2 mb-4"></div>
-        <div class="flex gap-2">
-          <select id="park-select" class="border p-1 flex-1"></select>
-          <button id="send-to-park-btn" class="bg-green-500 text-white px-3 py-1 rounded">Отправить гулять</button>
-        </div>
-        <p id="park-cooldown" class="text-sm text-gray-500 mt-2"></p>
-      </div>
-      <div id="shop-content" class="tab-content">
-        <h2 class="font-bold text-lg mb-2">Магазин</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h3 class="font-semibold">🏠 Дома</h3>
-            <p>Ваш дом: <span id="current-home"></span> (вмещает <span id="home-limit"></span>)</p>
-            <div id="home-options" class="space-y-1 mt-2"></div>
-            <button id="add-slot-btn" class="mt-2 bg-blue-400 text-white px-3 py-1 rounded">+1 место (100💰)</button>
-          </div>
-          <div>
-            <h3 class="font-semibold">Продажи игроков</h3>
-            <div id="player-sales-list" class="space-y-2"></div>
-            <h3 class="font-semibold mt-4">Выставить на продажу</h3>
-            <select id="sell-cat-select" class="border p-1 w-full"></select>
-            <input id="sell-price" type="number" placeholder="Цена" class="border p-1 mt-1 w-full">
-            <button id="sell-cat-btn" class="mt-1 bg-pink-500 text-white px-3 py-1 rounded">Продать</button>
-            <h3 class="font-semibold mt-4">Трейд с игроком</h3>
-            <input id="trade-nick" placeholder="Ник игрока" class="border p-1 w-full mt-1">
-            <select id="trade-my-cat" class="border p-1 w-full mt-1"><option value="">-- мой кот --</option></select>
-            <select id="trade-their-cat" class="border p-1 w-full mt-1"><option value="">-- кот взамен --</option></select>
-            <input id="trade-my-coins" type="number" placeholder="Мои монеты" class="border p-1 mt-1 w-full">
-            <input id="trade-their-coins" type="number" placeholder="Его монеты" class="border p-1 mt-1 w-full">
-            <button id="send-trade-btn" class="mt-1 bg-pink-500 text-white px-3 py-1 rounded">Предложить трейд</button>
-          </div>
-        </div>
-      </div>
-      <div id="search-content" class="tab-content">
-        <h2 class="font-bold text-lg mb-2">Поиск кота</h2>
-        <input id="search-input" placeholder="Имя или ID" class="border p-2 w-full mb-2">
-        <button id="search-btn" class="bg-indigo-500 text-white px-4 py-2 rounded">Искать</button>
-        <div id="search-results" class="mt-2"></div>
-      </div>
-      <div id="breeding-section" class="mt-4 border-t pt-4 hidden">
-        <h2 class="font-bold text-lg mb-2">Разведение (только в Доме)</h2>
-        <div class="flex gap-2 mt-2">
-          <select id="mother-select" class="border p-1 flex-1"><option value="">-- мать --</option></select>
-          <select id="father-select" class="border p-1 flex-1"><option value="">-- отец --</option></select>
-          <button id="breed-btn" class="bg-pink-500 text-white px-4 py-1 rounded">Скрестить</button>
-        </div>
-        <p id="breed-message" class="text-sm mt-1"></p>
-      </div>
+      <div id="home-content" class="tab-content active"><h2 class="font-bold text-lg mb-2">Мои коты</h2><div id="my-cats" class="space-y-2"></div><button id="buy-cat-btn" class="mt-2 bg-purple-500 text-white px-3 py-1 rounded"></button><p id="home-capacity" class="text-sm text-gray-600 mt-2"></p></div>
+      <div id="street-content" class="tab-content"><h2 class="font-bold text-lg mb-2">Все коты</h2><div id="all-cats" class="space-y-2 max-h-96 overflow-y-auto"></div></div>
+      <div id="park-content" class="tab-content"><h2 class="font-bold text-lg mb-2">Парк (прогулка)</h2><div id="park-cats" class="space-y-2 mb-4"></div><div class="flex gap-2"><select id="park-select" class="border p-1 flex-1"></select><button id="send-to-park-btn" class="bg-green-500 text-white px-3 py-1 rounded">Отправить гулять</button></div><p id="park-cooldown" class="text-sm text-gray-500 mt-2"></p></div>
+      <div id="shop-content" class="tab-content"><h2 class="font-bold text-lg mb-2">Магазин</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><h3 class="font-semibold">🏠 Дома</h3><p>Ваш дом: <span id="current-home"></span> (вмещает <span id="home-limit"></span>)</p><div id="home-options" class="space-y-1 mt-2"></div><button id="add-slot-btn" class="mt-2 bg-blue-400 text-white px-3 py-1 rounded">+1 место (100💰)</button></div><div><h3 class="font-semibold">Продажи игроков</h3><div id="player-sales-list" class="space-y-2"></div><h3 class="font-semibold mt-4">Выставить на продажу</h3><select id="sell-cat-select" class="border p-1 w-full"></select><input id="sell-price" type="number" placeholder="Цена" class="border p-1 mt-1 w-full"><button id="sell-cat-btn" class="mt-1 bg-pink-500 text-white px-3 py-1 rounded">Продать</button><h3 class="font-semibold mt-4">Трейд с игроком</h3><input id="trade-nick" placeholder="Ник игрока" class="border p-1 w-full mt-1"><select id="trade-my-cat" class="border p-1 w-full mt-1"><option value="">-- мой кот --</option></select><select id="trade-my-item" class="border p-1 w-full mt-1"><option value="">-- мой предмет --</option></select><select id="trade-their-cat" class="border p-1 w-full mt-1"><option value="">-- кот взамен --</option></select><select id="trade-their-item" class="border p-1 w-full mt-1"><option value="">-- предмет взамен --</option></select><input id="trade-my-coins" type="number" placeholder="Мои монеты" class="border p-1 mt-1 w-full"><input id="trade-their-coins" type="number" placeholder="Его монеты" class="border p-1 mt-1 w-full"><button id="send-trade-btn" class="mt-1 bg-pink-500 text-white px-3 py-1 rounded">Предложить трейд</button></div></div></div>
+      <div id="search-content" class="tab-content"><h2 class="font-bold text-lg mb-2">Поиск кота</h2><input id="search-input" placeholder="Имя или ID" class="border p-2 w-full mb-2"><button id="search-btn" class="bg-indigo-500 text-white px-4 py-2 rounded">Искать</button><div id="search-results" class="mt-2"></div></div>
+      <div id="breeding-section" class="mt-4 border-t pt-4 hidden"><h2 class="font-bold text-lg mb-2">Разведение (только в Доме)</h2><div class="flex gap-2 mt-2"><select id="mother-select" class="border p-1 flex-1"><option value="">-- мать --</option></select><select id="father-select" class="border p-1 flex-1"><option value="">-- отец --</option></select><button id="breed-btn" class="bg-pink-500 text-white px-4 py-1 rounded">Скрестить</button></div><p id="breed-message" class="text-sm mt-1"></p></div>
     </div>
-    <!-- Модальные окна -->
     <div id="messages-modal" class="modal"><div class="bg-white p-6 rounded-lg max-w-lg w-full relative"><button onclick="this.closest('.modal').classList.remove('active')" class="absolute top-2 right-2 text-xl">✕</button><h2 class="text-xl font-bold mb-4">Сообщения</h2><div id="messages-list" class="space-y-2"></div></div></div>
     <div id="kitten-naming-modal" class="modal"><div class="bg-white p-6 rounded-lg max-w-md w-full relative"><h2 class="text-xl font-bold mb-4">🐱 Назовите котёнка!</h2><div id="kitten-naming-info"></div><button id="submit-kitten-name-btn" class="mt-2 bg-green-500 text-white px-4 py-2 rounded">Назвать</button></div></div>
     <div id="inventory-modal" class="modal"><div class="bg-white p-6 rounded-lg max-w-md w-full relative"><button onclick="this.closest('.modal').classList.remove('active')" class="absolute top-2 right-2 text-xl">✕</button><h2 class="text-xl font-bold mb-4">🎒 Инвентарь</h2><div id="inventory-items"></div><select id="inventory-cat-select" class="border p-1 w-full mt-2"><option value="">-- выбери кота --</option></select><button id="use-item-btn" class="bg-purple-500 text-white px-4 py-2 rounded mt-2">Использовать</button><p id="inventory-message" class="text-sm mt-1"></p></div></div>
     <div id="mini-game-modal" class="modal"><div class="bg-white p-6 rounded-lg text-center"><h3 class="text-lg font-bold mb-2">Мини-игра: поймай момент!</h3><p id="mini-game-status">Нажми, когда 🐱 на 🟢</p><div class="mini-game-area mt-4 relative flex justify-center items-center gap-4"><span class="text-2xl">🔴</span><span class="text-2xl">🟢</span><span class="text-2xl">🔴</span><div id="game-runner" class="runner" style="left:0px">🐱</div></div><button id="mini-game-btn" class="bg-yellow-400 px-4 py-2 rounded mt-4">Поймать!</button><p id="mini-game-result" class="text-sm mt-2"></p></div></div>
     <div id="cat-info-modal" class="modal"><div class="bg-white p-6 rounded-lg max-w-md w-full relative"><button onclick="this.closest('.modal').classList.remove('active')" class="absolute top-2 right-2 text-xl">✕</button><div id="cat-info-content"></div><button id="family-tree-btn" class="mt-4 bg-green-500 text-white px-4 py-2 rounded">🌳 Родословная</button></div></div>
     <div id="family-tree-modal" class="modal"><div class="bg-white p-6 rounded-lg max-w-lg w-full relative"><button onclick="this.closest('.modal').classList.remove('active')" class="absolute top-2 right-2 text-xl">✕</button><h2 class="text-xl font-bold mb-4">🌳 Родословная</h2><div id="family-tree-content"></div></div></div>
-    <div id="admin-modal" class="modal"><div class="bg-white p-6 rounded-lg max-w-2xl w-full relative"><button onclick="this.closest('.modal').classList.remove('active')" class="absolute top-2 right-2 text-xl">✕</button><h2 class="text-xl font-bold mb-4">⚙️ Админ-панель</h2><div class="space-y-4"><div><h3 class="font-semibold">Создать кота</h3><input id="new-cat-name" placeholder="Имя" class="border p-1 w-full mb-1"><input id="new-cat-id" type="number" placeholder="ID" class="border p-1 w-full mb-1"><select id="new-cat-gender" class="border p-1 w-full mb-1"><option value="кот">Кот</option><option value="кошка">Кошка</option></select><select id="new-cat-age" class="border p-1 w-full mb-1"><option value="взрослый">Взрослый</option><option value="котёнок">Котёнок</option><option value="новорождённый">Новорождённый</option></select><input id="new-cat-coat" placeholder="Основной цвет" class="border p-1 w-full mb-1"><select id="new-cat-pattern" class="border p-1 w-full mb-1">${PATTERNS.map(p => `<option>${p}</option>`).join('')}</select><input id="new-cat-secondary" placeholder="Второстепенный цвет" class="border p-1 w-full mb-1"><input id="new-cat-eye" placeholder="Цвет глаз" class="border p-1 w-full mb-1"><select id="new-cat-mutation" class="border p-1 w-full mb-1"><option value="отсутствует">Без мутации</option><option value="гетерохромия">Гетерохромия</option></select><input id="new-cat-character" placeholder="Характер" class="border p-1 w-full mb-1"><button id="create-cat-btn" class="bg-green-500 text-white px-3 py-1 rounded">Создать кота</button></div><div><h3 class="font-semibold mt-4">Удалить кота</h3><input id="delete-cat-id" type="number" placeholder="ID кота" class="border p-1 w-full mb-1"><button id="delete-cat-btn" class="bg-red-500 text-white px-3 py-1 rounded">Удалить</button></div><div><h3 class="font-semibold mt-4">Добавить монеты игроку</h3><input id="coins-email" placeholder="Email игрока" class="border p-1 w-full mb-1"><input id="coins-amount" type="number" placeholder="Сумма" class="border p-1 w-full mb-1"><button id="add-coins-btn" class="bg-blue-500 text-white px-3 py-1 rounded">Добавить</button></div><div><h3 class="font-semibold mt-4">Все игроки</h3><div id="all-users-list" class="max-h-40 overflow-y-auto border p-2 rounded"></div></div></div></div>`;
+    <div id="admin-modal" class="modal"><div class="bg-white p-6 rounded-lg max-w-2xl w-full relative"><button onclick="this.closest('.modal').classList.remove('active')" class="absolute top-2 right-2 text-xl">✕</button><h2 class="text-xl font-bold mb-4">⚙️ Админ-панель</h2><div class="space-y-4"><div><h3 class="font-semibold">Создать кота</h3><input id="new-cat-name" placeholder="Имя" class="border p-1 w-full mb-1"><input id="new-cat-id" type="number" placeholder="ID" class="border p-1 w-full mb-1"><select id="new-cat-gender" class="border p-1 w-full mb-1"><option value="кот">Кот</option><option value="кошка">Кошка</option></select><select id="new-cat-age" class="border p-1 w-full mb-1"><option value="взрослый">Взрослый</option><option value="котёнок">Котёнок</option><option value="новорождённый">Новорождённый</option></select><input id="new-cat-coat" placeholder="Основной цвет" class="border p-1 w-full mb-1"><input id="new-cat-pattern" placeholder="Окрас" class="border p-1 w-full mb-1"><input id="new-cat-secondary" placeholder="Второстепенный цвет" class="border p-1 w-full mb-1"><input id="new-cat-eye" placeholder="Цвет глаз" class="border p-1 w-full mb-1"><input id="new-cat-mutation" placeholder="Мутация" class="border p-1 w-full mb-1"><input id="new-cat-character" placeholder="Характер" class="border p-1 w-full mb-1"><input id="new-cat-owner-email" placeholder="Email владельца (оставьте пустым для себя)" class="border p-1 w-full mb-1"><button id="create-cat-btn" class="bg-green-500 text-white px-3 py-1 rounded">Создать кота</button></div><div><h3 class="font-semibold mt-4">Удалить кота</h3><input id="delete-cat-id" type="number" placeholder="ID кота" class="border p-1 w-full mb-1"><button id="delete-cat-btn" class="bg-red-500 text-white px-3 py-1 rounded">Удалить</button></div><div><h3 class="font-semibold mt-4">Добавить монеты игроку</h3><input id="coins-email" placeholder="Email игрока" class="border p-1 w-full mb-1"><input id="coins-amount" type="number" placeholder="Сумма" class="border p-1 w-full mb-1"><button id="add-coins-btn" class="bg-blue-500 text-white px-3 py-1 rounded">Добавить</button></div><div><h3 class="font-semibold mt-4">Сменить ник игроку</h3><input id="nick-email" placeholder="Email игрока" class="border p-1 w-full mb-1"><input id="new-nick" placeholder="Новый ник" class="border p-1 w-full mb-1"><button id="change-nick-btn" class="bg-purple-500 text-white px-3 py-1 rounded">Сменить ник</button></div><div><h3 class="font-semibold mt-4">Все игроки</h3><div id="all-users-list" class="max-h-40 overflow-y-auto border p-2 rounded"></div></div></div></div>
+    `;
 
-    // Загрузка данных пользователя
+    // загрузка данных пользователя
     db.collection('users').doc(uid).onSnapshot(doc => {
       if (!doc.exists) return;
       const d = doc.data();
@@ -293,7 +271,7 @@
       }
     });
 
-    // Переключение вкладок
+    // переключение вкладок
     document.querySelectorAll('.tab-link').forEach(b => {
       b.addEventListener('click', () => {
         document.querySelectorAll('.tab-link').forEach(x => x.classList.remove('bg-gray-200'));
@@ -316,7 +294,7 @@
           <div class="border p-2 rounded flex justify-between items-center">
             <div>
               <span class="font-bold text-blue-600 cursor-pointer" onclick="showCatInfo('${c.id}')">${c.name}</span>
-              {${c.gender}} [${String(c.id).padStart(4, '0')}] ${c.age} ${c.state ? `<${c.state}>` : ''}
+              {${c.gender === 'кот' ? 'мальчик' : 'девочка'}} [${String(c.id).padStart(4, '0')}] ${c.age} ${c.state ? `<${c.state}>` : ''}
             </div>
           </div>`).join('');
       }
@@ -332,20 +310,23 @@
       snap.forEach(doc => cats.push({ id: doc.id, ...doc.data() }));
       const div = document.getElementById('all-cats');
       if (div) div.innerHTML = cats.map(c => `
-        <div class="border p-2 rounded text-sm">${c.name} {${c.gender}} [${String(c.id).padStart(4, '0')}] – ${c.coatColor}, ${c.eyeColor}</div>
+        <div class="border p-2 rounded text-sm">
+          <span class="font-bold text-blue-600 cursor-pointer" onclick="showCatInfo('${c.id}')">${c.name}</span>
+          {${c.gender === 'кот' ? 'мальчик' : 'девочка'}} [${String(c.id).padStart(4, '0')}] – ${c.coatColor}, ${c.eyeColor}
+        </div>
       `).join('');
     });
 
-    // Парк (прогулка)
+    // Парк
     db.collection('park').where('owner', '==', uid).onSnapshot(snap => {
       const park = [];
       snap.forEach(doc => park.push({ id: doc.id, ...doc.data() }));
       document.getElementById('park-cats').innerHTML = park.map(c => `
-        <div class="border p-2 rounded">${c.name} {${c.gender}} – вернётся через ${Math.max(0, Math.ceil((c.returnTime - Date.now()) / 60000))} мин.</div>
+        <div class="border p-2 rounded">${c.name} {${c.gender === 'кот' ? 'мальчик' : 'девочка'}} – вернётся через ${Math.max(0, Math.ceil((c.returnTime - Date.now()) / 60000))} мин.</div>
       `).join('');
     });
 
-    // Продажи игроков
+    // Продажи
     db.collection('sales').onSnapshot(snap => {
       const sales = [];
       snap.forEach(doc => sales.push({ id: doc.id, ...doc.data() }));
@@ -354,18 +335,12 @@
       `).join('') : '<p class="text-gray-500">Нет предложений.</p>';
     });
 
-    // Трейды
-    db.collection('trades').where('to', '==', uid).onSnapshot(snap => {
-      // отображение входящих трейдов в сообщения
-    });
-
     // Дома
     const homeDiv = document.getElementById('home-options');
     Object.entries(HOME_PRICES).forEach(([size, price]) => {
       homeDiv.innerHTML += `<button class="bg-blue-400 text-white px-2 py-1 rounded mr-2 mb-1" onclick="buyHome('${size}', ${price})">${size} (${price}💰)</button>`;
     });
 
-    // +1 место
     document.getElementById('add-slot-btn').onclick = async () => {
       const uDoc = await db.collection('users').doc(uid).get();
       if (uDoc.data().coins < 100) { alert('Недостаточно монет.'); return; }
@@ -374,13 +349,20 @@
     };
 
     function populateSelects(cats) {
-      const opts = cats.map(c => `<option value="${c.id}">${c.name} {${c.gender}}</option>`).join('');
+      const opts = cats.map(c => `<option value="${c.id}">${c.name} {${c.gender === 'кот' ? 'мальчик' : 'девочка'}}</option>`).join('');
       ['mother-select', 'father-select', 'sell-cat-select', 'park-select', 'inventory-cat-select', 'trade-my-cat', 'trade-their-cat'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '<option value="">-- выбери --</option>' + opts;
       });
+      // предметы для трейда
+      db.collection('users').doc(uid).get().then(u => {
+        const items = u.data().items || [];
+        const itemOpts = items.map(i => `<option value="${i}">${i}</option>`).join('');
+        document.getElementById('trade-my-item').innerHTML = '<option value="">-- мой предмет --</option>' + itemOpts;
+      });
     }
 
+    // Проверка беременностей
     async function checkPregnancies(cats) {
       const now = Date.now();
       for (const cat of cats) {
@@ -425,6 +407,7 @@
       }
     }
 
+    // Проверка возрастов
     async function checkAges(cats) {
       const now = Date.now();
       for (const cat of cats) {
@@ -522,7 +505,6 @@
       await db.collection('cats').doc(cid).update({ onSale: true });
       alert('Кот выставлен на продажу!');
     };
-
     window.buyFromPlayer = async (sid) => {
       const ss = await db.collection('sales').doc(sid).get();
       const sale = ss.data();
@@ -534,7 +516,7 @@
       await db.collection('sales').doc(sid).delete();
     };
 
-    // Мини-игра на прогулку
+    // Мини-игра прогулка
     let mgActive = false, mgWins = 0, mgInterval, lastFailTime = 0;
     document.getElementById('send-to-park-btn').onclick = async () => {
       const cid = document.getElementById('park-select').value;
@@ -599,7 +581,6 @@
         const d = doc.data();
         const rand = Math.random();
         if (rand < 0.05) {
-          // котёнок
           const newKitten = {
             owner: uid, name: '', gender: Math.random() < 0.5 ? 'кошка' : 'кот',
             age: 'новорождённый', id: (await db.collection('cats').get()).size + 1,
@@ -626,7 +607,9 @@
     // Сообщения
     document.getElementById('messages-btn').onclick = () => {
       const modal = document.getElementById('messages-modal');
-      document.getElementById('messages-list').innerHTML = notifications.length ? notifications.map(n => `<div class="border-b py-1">${n.message}</div>`).join('') : '<p>Нет сообщений.</p>';
+      document.getElementById('messages-list').innerHTML = notifications.length ? notifications.map(n => `
+        <div class="border-b py-2">${n.message} ${n.type === 'trade' ? `<button class="text-blue-600 underline" onclick="viewTrade('${n.tradeId}')">👁 Посмотреть</button>` : ''}</div>
+      `).join('') : '<p>Нет сообщений.</p>';
       notifications.forEach(n => n.read = true);
       updateNotifDot();
       modal.classList.add('active');
@@ -659,7 +642,6 @@
         await db.collection('users').doc(uid).update({ items: newItems });
         document.getElementById('inventory-message').innerText = 'Успешно использовали! Выйдите из инвентаря чтобы назвать котят.';
         document.getElementById('inventory-modal').classList.remove('active');
-        // мгновенные роды
         await db.collection('cats').doc(cid).update({ isPregnant: false, pregnancyStart: null });
         const fatherId = cat.fatherId;
         let fd = {};
@@ -699,7 +681,7 @@
       if (!doc.exists) return;
       const c = doc.data();
       document.getElementById('cat-info-content').innerHTML = `
-        Имя: ${c.name}<br>Пол: {${c.gender}}<br>ID: [${String(c.id).padStart(4,'0')}]<br>
+        Имя: ${c.name}<br>Пол: {${c.gender === 'кот' ? 'мальчик' : 'девочка'}}<br>ID: [${String(c.id).padStart(4,'0')}]<br>
         Возраст: ${c.age}<br>Основной цвет: ${c.coatColor}<br>Окрас: ${c.pattern}<br>
         Второстепенный: ${c.secondaryColor || 'нет'}<br>Глаза: ${c.eyeColor}${c.eyeColor2 ? ', ' + c.eyeColor2 : ''}<br>
         Мутация: ${c.mutation}<br>Характер: ${c.character}<br>Состояние: ${c.state}
@@ -733,7 +715,7 @@
             if (c.motherId === target.motherId || c.fatherId === target.fatherId) rel = 'Дальний родственник';
           }
         }
-        return `<p>${c.name} {${c.gender}} [${String(c.id).padStart(4,'0')}] — ${rel}</p>`;
+        return `<p>${c.name} {${c.gender === 'кот' ? 'мальчик' : 'девочка'}} [${String(c.id).padStart(4,'0')}] — ${rel}</p>`;
       }).join('');
       document.getElementById('family-tree-content').innerHTML = relations;
       document.getElementById('family-tree-modal').classList.add('active');
@@ -748,7 +730,150 @@
         const c = doc.data();
         if (c.name.toLowerCase().includes(q) || String(c.id) === q) res.push(c);
       });
-      document.getElementById('search-results').innerHTML = res.map(c => `<p>${c.name} {${c.gender}} [${String(c.id).padStart(4,'0')}] – ${c.coatColor}, ${c.eyeColor}</p>`).join('');
+      document.getElementById('search-results').innerHTML = res.map(c => `
+        <div class="border p-2 rounded text-sm">
+          <span class="font-bold text-blue-600 cursor-pointer" onclick="showCatInfo('${c.id}')">${c.name}</span>
+          {${c.gender === 'кот' ? 'мальчик' : 'девочка'}} [${String(c.id).padStart(4,'0')}] – ${c.coatColor}, ${c.eyeColor}
+        </div>`).join('');
+    };
+
+    // Трейды
+    document.getElementById('trade-nick').addEventListener('input', async (e) => {
+      const nick = e.target.value.trim();
+      if (nick.length < 2) return;
+      const usersSnap = await db.collection('users').where('nickname', '==', nick).get();
+      if (!usersSnap.empty) {
+        const toUid = usersSnap.docs[0].id;
+        const catsSnap = await db.collection('cats').where('owner', '==', toUid).get();
+        const catOpts = [];
+        catsSnap.forEach(doc => catOpts.push(`<option value="${doc.id}">${doc.data().name}</option>`));
+        document.getElementById('trade-their-cat').innerHTML = '<option value="">-- не выбран --</option>' + catOpts.join('');
+        const userDoc = await db.collection('users').doc(toUid).get();
+        const items = userDoc.data().items || [];
+        const itemOpts = items.map(i => `<option value="${i}">${i}</option>`).join('');
+        document.getElementById('trade-their-item').innerHTML = '<option value="">-- не выбран --</option>' + itemOpts;
+      }
+    });
+
+    document.getElementById('send-trade-btn').onclick = async () => {
+      const toNick = document.getElementById('trade-nick').value.trim();
+      const myCatId = document.getElementById('trade-my-cat').value;
+      const theirCatId = document.getElementById('trade-their-cat').value;
+      const myItem = document.getElementById('trade-my-item').value;
+      const theirItem = document.getElementById('trade-their-item').value;
+      const myCoins = parseInt(document.getElementById('trade-my-coins').value) || 0;
+      const theirCoins = parseInt(document.getElementById('trade-their-coins').value) || 0;
+
+      if (!toNick) return;
+      const usersSnap = await db.collection('users').where('nickname', '==', toNick).get();
+      if (usersSnap.empty) { alert('Игрок не найден.'); return; }
+      const toUid = usersSnap.docs[0].id;
+
+      if (myCatId) {
+        const catDoc = await db.collection('cats').doc(myCatId).get();
+        if (!catDoc.exists || catDoc.data().owner !== uid) { alert('Выбранный вами кот не существует или не ваш.'); return; }
+      }
+      if (myItem) {
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (!userDoc.data().items || !userDoc.data().items.includes(myItem)) { alert('У вас нет такого предмета.'); return; }
+      }
+
+      const tradeRef = await db.collection('trades').add({
+        from: uid, to: toUid,
+        myCatId: myCatId || null, myCatName: myCatId ? (await db.collection('cats').doc(myCatId).get()).data().name : null,
+        theirCatId: theirCatId || null, theirCatName: theirCatId ? (await db.collection('cats').doc(theirCatId).get()).data().name : null,
+        myItem: myItem || null,
+        theirItem: theirItem || null,
+        myCoins, theirCoins,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      addNotification(`Вам пришёл трейд! Посмотреть: 👁`, toUid);
+      // сохраняем информацию о трейде в уведомлении
+      const tradeNotif = notifications.find(n => n.targetUid === toUid && n.message.includes('Вам пришёл трейд'));
+      if (tradeNotif) tradeNotif.tradeId = tradeRef.id;
+    };
+
+    window.viewTrade = async (tradeId) => {
+      const tradeDoc = await db.collection('trades').doc(tradeId).get();
+      if (!tradeDoc.exists) return;
+      const t = tradeDoc.data();
+      const modal = document.createElement('div');
+      modal.className = 'modal active';
+      modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg max-w-md w-full relative">
+          <button onclick="this.closest('.modal').remove()" class="absolute top-2 right-2 text-xl">✕</button>
+          <h2 class="text-xl font-bold mb-4">Детали трейда</h2>
+          <p><strong>От:</strong> ${t.fromNick || (await db.collection('users').doc(t.from).get()).data().nickname}</p>
+          <p><strong>Предлагает:</strong></p>
+          <ul>
+            ${t.myCatId ? '<li>Кот: ' + t.myCatName + '</li>' : ''}
+            ${t.myItem ? '<li>Предмет: ' + t.myItem + '</li>' : ''}
+            ${t.myCoins ? '<li>Монеты: ' + t.myCoins + '</li>' : ''}
+          </ul>
+          <p><strong>Хочет получить от вас:</strong></p>
+          <ul>
+            ${t.theirCatId ? '<li>Кот: ' + t.theirCatName + '</li>' : ''}
+            ${t.theirItem ? '<li>Предмет: ' + t.theirItem + '</li>' : ''}
+            ${t.theirCoins ? '<li>Монеты: ' + t.theirCoins + '</li>' : ''}
+          </ul>
+          <div class="flex gap-2 mt-4">
+            <button onclick="acceptTrade('${tradeId}')" class="bg-green-500 text-white px-4 py-2 rounded">Принять</button>
+            <button onclick="declineTrade('${tradeId}')" class="bg-red-500 text-white px-4 py-2 rounded">Отклонить</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    };
+
+    window.acceptTrade = async (tradeId) => {
+      const tradeDoc = await db.collection('trades').doc(tradeId).get();
+      const t = tradeDoc.data();
+      if (t.status !== 'pending') return;
+
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (t.theirCatId) {
+        const catDoc = await db.collection('cats').doc(t.theirCatId).get();
+        if (!catDoc.exists || catDoc.data().owner !== uid) { alert('У вас нет запрашиваемого кота.'); return; }
+      }
+      if (t.theirItem) {
+        const items = userDoc.data().items || [];
+        if (!items.includes(t.theirItem)) { alert('У вас нет запрашиваемого предмета.'); return; }
+      }
+      if (t.theirCoins) {
+        if ((userDoc.data().coins || 0) < t.theirCoins) { alert('У вас не хватает монет.'); return; }
+      }
+
+      const batch = db.batch();
+      if (t.myCatId) batch.update(db.collection('cats').doc(t.myCatId), { owner: uid });
+      if (t.theirCatId) batch.update(db.collection('cats').doc(t.theirCatId), { owner: t.from });
+      if (t.myItem) {
+        batch.update(db.collection('users').doc(uid), { items: firebase.firestore.FieldValue.arrayUnion(t.myItem) });
+        batch.update(db.collection('users').doc(t.from), { items: firebase.firestore.FieldValue.arrayRemove(t.myItem) });
+      }
+      if (t.theirItem) {
+        batch.update(db.collection('users').doc(t.from), { items: firebase.firestore.FieldValue.arrayUnion(t.theirItem) });
+        batch.update(db.collection('users').doc(uid), { items: firebase.firestore.FieldValue.arrayRemove(t.theirItem) });
+      }
+      if (t.myCoins) {
+        batch.update(db.collection('users').doc(uid), { coins: firebase.firestore.FieldValue.increment(t.myCoins) });
+        batch.update(db.collection('users').doc(t.from), { coins: firebase.firestore.FieldValue.increment(-t.myCoins) });
+      }
+      if (t.theirCoins) {
+        batch.update(db.collection('users').doc(t.from), { coins: firebase.firestore.FieldValue.increment(t.theirCoins) });
+        batch.update(db.collection('users').doc(uid), { coins: firebase.firestore.FieldValue.increment(-t.theirCoins) });
+      }
+      batch.update(db.collection('trades').doc(tradeId), { status: 'accepted' });
+      await batch.commit();
+      addNotification('Трейд успешно завершён.');
+      document.querySelector('.modal.active')?.remove();
+    };
+
+    window.declineTrade = async (tradeId) => {
+      await db.collection('trades').doc(tradeId).update({ status: 'declined' });
+      addNotification('Трейд отклонён.');
+      document.querySelector('.modal.active')?.remove();
     };
 
     // Админка
@@ -766,13 +891,17 @@
         const gender = document.getElementById('new-cat-gender').value;
         const age = document.getElementById('new-cat-age').value;
         const coat = document.getElementById('new-cat-coat').value || 'серый';
-        const pattern = document.getElementById('new-cat-pattern').value;
+        const pattern = document.getElementById('new-cat-pattern').value || 'однотонный';
         const secondary = document.getElementById('new-cat-secondary').value || null;
         const eye = document.getElementById('new-cat-eye').value || 'зеленый';
-        const mutation = document.getElementById('new-cat-mutation').value;
+        const mutation = document.getElementById('new-cat-mutation').value || 'отсутствует';
         const character = document.getElementById('new-cat-character').value || 'добрый';
+        const ownerEmail = document.getElementById('new-cat-owner-email').value.trim() || user.email;
+        const ownerSnap = await db.collection('users').where(firebase.firestore.FieldPath.documentId(), '==', ownerEmail).get();
+        let ownerUid = uid;
+        if (!ownerSnap.empty) ownerUid = ownerSnap.docs[0].id;
         await db.collection('cats').add({
-          owner: uid, name, gender, age, id,
+          owner: ownerUid, name, gender, age, id,
           coatColor: coat, pattern, secondaryColor: secondary || null,
           eyeColor: eye, eyeColor2: mutation === 'гетерохромия' ? randomItem(EYE_COLORS.filter(e => e !== eye)) : null,
           mutation, character, isPregnant: false, pregnancyStart: null, litterCount: 0, onWalk: false,
@@ -797,43 +926,35 @@
         snap.forEach(async doc => { await db.collection('users').doc(doc.id).update({ coins: firebase.firestore.FieldValue.increment(amount) }); });
         alert('Монеты добавлены!');
       };
+      document.getElementById('change-nick-btn').onclick = async () => {
+        const email = document.getElementById('nick-email').value.trim();
+        const newNick = document.getElementById('new-nick').value.trim();
+        if (!email || !newNick) return;
+        const snap = await db.collection('users').where(firebase.firestore.FieldPath.documentId(), '==', email).get();
+        if (snap.empty) { alert('Игрок не найден.'); return; }
+        const exist = await db.collection('users').where('nickname', '==', newNick).get();
+        if (!exist.empty) { alert('Такой ник занят.'); return; }
+        snap.forEach(async doc => { await db.collection('users').doc(doc.id).update({ nickname: newNick }); });
+        alert('Ник изменён!');
+      };
     }
-
-    // Трейды
-    document.getElementById('send-trade-btn').onclick = async () => {
-      const toNick = document.getElementById('trade-nick').value.trim();
-      const myCatId = document.getElementById('trade-my-cat').value;
-      const theirCatId = document.getElementById('trade-their-cat').value;
-      const myCoins = parseInt(document.getElementById('trade-my-coins').value) || 0;
-      const theirCoins = parseInt(document.getElementById('trade-their-coins').value) || 0;
-      if (!toNick) return;
-      const usersSnap = await db.collection('users').where('nickname', '==', toNick).get();
-      if (usersSnap.empty) { alert('Игрок не найден.'); return; }
-      const toUid = usersSnap.docs[0].id;
-      const myCat = myCatId ? (await db.collection('cats').doc(myCatId).get()).data() : null;
-      const theirCat = theirCatId ? (await db.collection('cats').doc(theirCatId).get()).data() : null;
-      await db.collection('trades').add({
-        from: uid, to: toUid,
-        myCatId: myCatId || null, myCatName: myCat?.name || null,
-        theirCatId: theirCatId || null, theirCatName: theirCat?.name || null,
-        myCoins, theirCoins,
-        status: 'pending'
-      });
-      addNotification(`Трейд предложен игроку ${toNick}.`);
-    };
 
     document.getElementById('logout-btn').onclick = () => auth.signOut();
   }
 
   window.buyHome = async (size, price) => {
     const uDoc = await db.collection('users').doc(auth.currentUser.uid).get();
-    if (uDoc.data().coins < price) { alert('Недостаточно монет.'); return; }
-    if (HOME_SIZES[size] <= HOME_SIZES[uDoc.data().homeSize]) { alert('Уже есть дом такого или большего размера.'); return; }
-    await db.collection('users').doc(auth.currentUser.uid).update({ coins: firebase.firestore.FieldValue.increment(-price), homeSize: size });
-    alert('Дом куплен!');
+    const coins = uDoc.data().coins || 0;
+    if (coins < price) { alert('У вас недостаточно монет!'); return; }
+    if (HOME_SIZES[size] <= HOME_SIZES[uDoc.data().homeSize]) { alert('У вас уже есть дом такого или большего размера.'); return; }
+    await db.collection('users').doc(auth.currentUser.uid).update({
+      coins: firebase.firestore.FieldValue.increment(-price),
+      homeSize: size
+    });
+    alert(`Вы успешно купили дом: ${size}`);
   };
 
   auth.onAuthStateChanged(user => user ? showGame(user) : showLanding());
 </script>
 </body>
-</html>
+  </html>
