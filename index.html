@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Котофей: Генетика + Приключения</title>
+    <title>Котофей: Генетика + Приключения | Вход и регистрация</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -20,6 +20,43 @@
             padding: 20px;
             color: #4a2e2a;
         }
+        /* Стили для форм авторизации */
+        .auth-container {
+            max-width: 500px;
+            margin: 50px auto;
+            background: rgba(255, 248, 225, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 60px;
+            padding: 30px 25px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .auth-container h2 { margin-bottom: 20px; }
+        .auth-container input {
+            width: 100%;
+            padding: 14px 20px;
+            margin: 12px 0;
+            border: none;
+            border-radius: 50px;
+            background: #fff5e8;
+            font-size: 1rem;
+            font-family: inherit;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .auth-container button {
+            background: #ffbc6e;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1rem;
+            margin: 8px 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .auth-container button:hover { background: #ffa841; transform: scale(0.98); }
+        .github-btn { background: #2b2b2b; color: white; }
+        .error-msg { color: #c0392b; background: #ffe6e6; border-radius: 30px; padding: 8px; margin-top: 10px; }
         .game-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -30,9 +67,11 @@
             overflow: hidden;
             padding: 20px 25px 35px;
             border: 2px solid #ffecb3;
+            display: none;
         }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; background: #fff1df; padding: 15px 25px; border-radius: 100px; margin-bottom: 30px; box-shadow: 0 6px 0 #cb9e6b; }
         .user-info { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .logout-btn { background: #e06c4a; color: white; border: none; padding: 6px 18px; border-radius: 40px; font-weight: bold; cursor: pointer; }
         .coins { background: #f3b33d; padding: 8px 20px; border-radius: 40px; font-weight: bold; font-size: 1.3rem; color: #2c1a12; }
         .tab-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 30px; justify-content: center; }
         .tab-btn { background: #fff2e2; border: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; color: #7b4a2e; box-shadow: 0 3px 0 #d6b17e; }
@@ -58,12 +97,33 @@
     </style>
 </head>
 <body>
-<div class="game-container">
+
+<!-- Блок авторизации -->
+<div id="authPanel" class="auth-container">
+    <h2><i class="fas fa-cat"></i> Котофей</h2>
+    <div>
+        <input type="text" id="loginEmail" placeholder="Электронная почта">
+        <input type="password" id="loginPassword" placeholder="Пароль">
+        <button id="loginBtn"><i class="fas fa-sign-in-alt"></i> Войти</button>
+        <button id="githubLoginBtn" class="github-btn"><i class="fab fa-github"></i> GitHub</button>
+    </div>
+    <div style="margin-top: 20px;">
+        <input type="text" id="regNick" placeholder="Ваш ник (отображается в игре)">
+        <input type="email" id="regEmail" placeholder="Email">
+        <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)">
+        <button id="registerBtn"><i class="fas fa-user-plus"></i> Зарегистрироваться</button>
+    </div>
+    <div id="authError" class="error-msg" style="display: none;"></div>
+</div>
+
+<!-- Игровой контейнер (скрыт до входа) -->
+<div id="gameContainer" class="game-container">
     <div class="header">
         <div class="user-info"><i class="fas fa-cat" style="font-size: 2rem;"></i><span id="userIdDisplay">Кото-мастер</span>
         <div class="coins"><i class="fas fa-coins"></i> <span id="coinAmount">0</span></div>
         <div><i class="fas fa-home"></i> Дом ур. <span id="houseLevel">1</span></div></div>
-        <div><i class="fas fa-trophy"></i> Достижений: <span id="achievementCount">0</span></div>
+        <div><i class="fas fa-trophy"></i> Достижений: <span id="achievementCount">0</span>
+        <button id="logoutButton" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Выйти</button></div>
     </div>
     <div class="tab-bar">
         <button class="tab-btn active" data-tab="catsTab"><i class="fas fa-paw"></i> Кошки</button>
@@ -100,27 +160,22 @@
         <div id="randomEventPanel" style="margin-top: 15px;"></div>
     </div>
 
-    <!-- Магазин (расширен) -->
     <div id="shopTab" class="content-panel"><h2><i class="fas fa-store"></i> Лавка</h2><div id="shopItems" class="cats-grid"></div></div>
     <div id="inventoryTab" class="content-panel"><h2><i class="fas fa-backpack"></i> Рюкзак</h2><div id="inventoryList" class="cats-grid"></div></div>
     
-    <!-- Мини-игры: мыши + рыбалка -->
     <div id="minigameTab" class="content-panel">
         <h2>🐭 Ловец мышей & 🎣 Рыбалка</h2>
         <div class="mini-game-area"><p>Кликай по мыши! +5 🪙, опыт</p><div id="mouseTarget" class="mouse-button"><i class="fas fa-mouse-pointer"></i> 🐭</div><div>Поймано: <span id="gameScore">0</span></div></div>
         <div class="mini-game-area" style="margin-top:20px"><p>🐟 Рыбалка: кликай по рыбе, поймай сокровище!</p><div id="fishTarget" class="fish-button"><i class="fas fa-fish"></i> 🎣</div><div>Улов сегодня: <span id="fishCount">0</span></div></div>
     </div>
 
-    <!-- Квесты (ежедневные) -->
     <div id="questsTab" class="content-panel"><h2><i class="fas fa-tasks"></i> Задания</h2><div id="questsList" class="cats-grid"></div><button id="refreshQuestsBtn">🔄 Обновить за монеты (50)</button></div>
     
-    <!-- Разведение с мутациями -->
     <div id="breedingTab" class="content-panel">
         <h2>🧬 Генетика + Мутации!</h2><p>Скрещивание стоит 100 🪙, есть шанс 20% на уникальный ген "Золотой"</p>
         <div id="breedSelectArea" class="breeding-select"></div><button id="breedBtn">✨ Скрестить ✨</button><div id="breedResult"></div>
     </div>
 
-    <!-- Дружба между котами -->
     <div id="friendshipTab" class="content-panel">
         <h2><i class="fas fa-hand-holding-heart"></i> Уровни дружбы</h2>
         <p>Чем выше дружба, тем больше бонусов к опыту и счастью!</p>
@@ -131,11 +186,11 @@
     <div id="achievementsTab" class="content-panel"><h2>🏆 Достижения</h2><div id="achievementsList" style="display: flex; flex-wrap: wrap;"></div></div>
     <div id="leaderboardTab" class="content-panel"><h2>📊 Топ игроков (по уровню кота)</h2><div id="leaderboardList"></div><button id="updateLeaderboardBtn">Обновить таблицу</button></div>
 
-    <footer>🐱 Экспериментальная версия: мутации, дружба, дом, квесты и лидеры!</footer>
+    <footer>🐱 Регистрация по почте и паролю, вход через GitHub. Мутации, дружба, квесты и таблица лидеров.</footer>
 </div>
 
 <script>
-    // НОВЫЙ КОНФИГ FIREBASE
+    // Firebase конфиг (предоставлен)
     const firebaseConfig = {
         apiKey: "AIzaSyC0b58JT-x3te0LZmWQv5qA2mzG026ycK8",
         authDomain: "cat-games-v1.firebaseapp.com",
@@ -153,15 +208,14 @@
     let userData = {
         coins: 500, inventory: [], cats: [], achievementsProgress: {},
         totalCatches: 0, totalFeeds: 0, totalPlays: 0, houseLevel: 1,
-        friendships: {}, // key "id1_id2" -> level
-        equipped: {}, // catId -> itemId
-        quests: [], dailyQuests: [], lastQuestRefresh: Date.now(),
+        friendships: {}, equipped: {},
+        quests: [], lastQuestRefresh: Date.now(),
         fishCaught: 0
     };
     let activeCatId = null;
-    let gameCatch = 0, fishSession = 0;
+    let eventTimeout = null;
 
-    // Генетика базовая
+    // ---- Генетика и базовые функции ----
     const furColors = ['Рыжий', 'Черный', 'Белый', 'Серый', 'Трёхцветный'];
     const eyeColors = ['Зелёные', 'Голубые', 'Жёлтые', 'Оранжевые'];
     const patterns = ['Полосатый', 'Пятнистый', 'Сплошной', 'Черепаховый'];
@@ -208,6 +262,7 @@
         while (newExp >= needed) { newExp -= needed; newLevel++; needed = 100 + (newLevel-1)*30; }
         return { ...cat, level: newLevel, exp: newExp };
     }
+
     async function saveToFirestore() {
         if (!currentUser) return;
         await db.collection('cat_users_v2').doc(currentUser.uid).set({
@@ -218,6 +273,7 @@
             fishCaught: userData.fishCaught, lastQuestRefresh: userData.lastQuestRefresh
         }, { merge: true });
     }
+
     async function loadFromFirestore() {
         if (!currentUser) return;
         const doc = await db.collection('cat_users_v2').doc(currentUser.uid).get();
@@ -234,21 +290,29 @@
             if (userData.cats.length === 0) userData.cats.push(createCat('Мурзик'), createCat('Снежок'));
             activeCatId = userData.cats[0]?.id;
         } else {
+            // Первый вход пользователя: создаём начальные данные
             userData.cats = [createCat('Барсик'), createCat('Луна')];
-            userData.coins = 600; userData.inventory = [{ id: "fish", name: "🐟 Рыба", effect: { hunger: 35 }, count: 3 }, { id: "ball", name: "🎾 Мяч", effect: { happiness: 25 }, count: 2 }, { id: "collar_gold", name: "✨ Золотой ошейник", effect: { expBonus: 0.2 }, count: 1, type:"equip" }];
-            userData.houseLevel = 1; activeCatId = userData.cats[0].id;
+            userData.coins = 600;
+            userData.inventory = [{ id: "fish", name: "🐟 Рыба", effect: { hunger: 35 }, count: 3 }, { id: "ball", name: "🎾 Мяч", effect: { happiness: 25 }, count: 2 }, { id: "collar_gold", name: "✨ Золотой ошейник", effect: { expBonus: 0.2 }, count: 1, type:"equip" }];
+            userData.houseLevel = 1;
+            userData.quests = [];
+            activeCatId = userData.cats[0].id;
             await initQuests();
             await saveToFirestore();
         }
-        updateUI(); initRandomEventTimer();
+        updateUI();
+        initRandomEventTimer();
     }
+
     async function initQuests() {
         if (!userData.quests.length) userData.quests = [
             { id: "feed3", name: "🍽️ Покорми 3 раза", target: 3, progress: 0, reward: 50, type: "feed" },
             { id: "play2", name: "🎾 Поиграй 2 раза", target: 2, progress: 0, reward: 40, type: "play" },
             { id: "catch5", name: "🐭 Поймай 5 мышей", target: 5, progress: 0, reward: 80, type: "catch" }
         ];
+        await saveToFirestore();
     }
+
     async function updateQuestProgress(type, amount=1) {
         let updated = false;
         userData.quests = userData.quests.map(q => {
@@ -262,18 +326,14 @@
         if (updated) await saveToFirestore();
         renderQuests();
     }
+
     function renderQuests() {
         const container = document.getElementById('questsList');
         if (!userData.quests.length) container.innerHTML = "<div>Нет квестов, обновите</div>";
         else container.innerHTML = userData.quests.map(q => `<div class="quest-item"><b>${q.name}</b><br>${q.progress}/${q.target}<br>🎁 ${q.reward}🪙 ${q.progress>=q.target?"✅":""}</div>`).join('');
     }
-    document.getElementById('refreshQuestsBtn')?.addEventListener('click', async () => {
-        if (userData.coins >= 50) { userData.coins -= 50; userData.quests = []; await initQuests(); await saveToFirestore(); renderQuests(); updateUI(); }
-        else alert('Не хватает 50 монет');
-    });
 
     // Случайное событие
-    let eventTimeout;
     function initRandomEventTimer() {
         if (eventTimeout) clearTimeout(eventTimeout);
         eventTimeout = setTimeout(async () => {
@@ -297,11 +357,6 @@
         if (level < 5) userData.friendships[key] = Math.min(5, level + 1);
         saveToFirestore();
     }
-    function getFriendshipBonus(catId1, catId2) {
-        let key = [catId1, catId2].sort().join('_');
-        let level = userData.friendships[key] || 1;
-        return { expBonus: level * 0.05, happinessBonus: level * 2 };
-    }
     function renderFriendship() {
         const container = document.getElementById('friendshipList');
         let pairs = [];
@@ -309,31 +364,25 @@
         container.innerHTML = pairs.map(p => `<div class="friend-card">${p.c1.name} ❤️ ${p.c2.name} | Ур.${p.level} (бонус опыта +${p.level*5}%)</div>`).join('');
         if(pairs.length===0) container.innerHTML='<div>Заведите второго кота для дружбы!</div>';
     }
-    document.getElementById('boostFriendshipBtn')?.addEventListener('click', async () => {
-        if (!activeCatId) return;
-        let others = userData.cats.filter(c=>c.id !== activeCatId);
-        if (others.length===0) alert('Нет других котов');
-        else if (userData.coins>=30) { userData.coins -= 30; updateFriendship(activeCatId, others[0].id); renderFriendship(); updateUI(); }
-        else alert('Нужно 30 монет');
-    });
 
     // Экипировка
     function renderEquipSelect() {
         let equippable = userData.inventory.filter(i => i.type === 'equip' && i.count>0);
-        let select = document.createElement('select'); select.id = "tempEquipSelect";
+        let select = document.getElementById('tempEquipSelect');
+        if (!select) {
+            select = document.createElement('select'); select.id = "tempEquipSelect";
+            document.getElementById('activeCatDetails').appendChild(select);
+        }
         select.innerHTML = '<option value="">Нет</option>' + equippable.map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
-        let btn = document.getElementById('equipItemBtn'); btn.onclick = () => {
-            let selectedId = document.getElementById('tempEquipSelect')?.value;
+        document.getElementById('equippedItem').innerHTML = (userData.equipped[activeCatId] ? (userData.inventory.find(i=>i.id===userData.equipped[activeCatId])?.name || 'Ошейник') : 'Нет') + ' ';
+        document.getElementById('equipItemBtn').onclick = () => {
+            let selectedId = select.value;
             if(selectedId) userData.equipped[activeCatId] = selectedId;
             else delete userData.equipped[activeCatId];
             saveToFirestore(); updateUI();
         };
-        document.getElementById('equippedItem').innerHTML = (userData.equipped[activeCatId] ? userData.inventory.find(i=>i.id===userData.equipped[activeCatId])?.name : 'Нет') + ' ';
-        if(equippable.length) document.getElementById('activeCatDetails').appendChild(select);
-        else document.getElementById('activeCatDetails').querySelector('#tempEquipSelect')?.remove();
     }
 
-    // Остальной код: действия, магазин, лидерборд и т.д. (базовый сохранен)
     async function performAction(action) {
         let idx = userData.cats.findIndex(c => c.id === activeCatId);
         if(idx===-1) return;
@@ -365,12 +414,28 @@
             } else alert('Мало монет');
         }));
     }
-    function renderInventory() { let cont=document.getElementById('inventoryList'); if(!userData.inventory.length) cont.innerHTML='Пусто'; else cont.innerHTML=userData.inventory.map(i=>`<div class="inv-item">${i.name} x${i.count}<br><button class="useInv" data-id="${i.id}">Исп.</button></div>`).join('');
+
+    function renderInventory() { 
+        let cont=document.getElementById('inventoryList'); 
+        if(!userData.inventory.length) cont.innerHTML='Пусто'; 
+        else cont.innerHTML=userData.inventory.map(i=>`<div class="inv-item">${i.name} x${i.count}<br><button class="useInv" data-id="${i.id}">Исп.</button></div>`).join('');
         document.querySelectorAll('.useInv').forEach(btn=>btn.addEventListener('click',()=>useItem(btn.dataset.id)));
     }
-    async function useItem(id) { let item=userData.inventory.find(i=>i.id===id); if(!item||item.count<=0) return; let idx=userData.cats.findIndex(c=>c.id===activeCatId); if(idx===-1) return; let cat={...userData.cats[idx]}; if(item.effect.hunger) cat.hunger=Math.min(100,cat.hunger+item.effect.hunger); if(item.effect.happiness) cat.happiness=Math.min(100,cat.happiness+item.effect.happiness); cat.lastUpdate=Date.now(); userData.cats[idx]=cat; item.count--; if(item.count===0) userData.inventory=userData.inventory.filter(i=>i.id!==id); await saveToFirestore(); updateUI(); }
+    async function useItem(id) { 
+        let item=userData.inventory.find(i=>i.id===id); 
+        if(!item||item.count<=0) return; 
+        let idx=userData.cats.findIndex(c=>c.id===activeCatId); 
+        if(idx===-1) return; 
+        let cat={...userData.cats[idx]}; 
+        if(item.effect.hunger) cat.hunger=Math.min(100,cat.hunger+item.effect.hunger); 
+        if(item.effect.happiness) cat.happiness=Math.min(100,cat.happiness+item.effect.happiness); 
+        cat.lastUpdate=Date.now(); 
+        userData.cats[idx]=cat; 
+        item.count--; 
+        if(item.count===0) userData.inventory=userData.inventory.filter(i=>i.id!==id); 
+        await saveToFirestore(); updateUI(); 
+    }
 
-    // Мини-игры
     function initMinigames() {
         document.getElementById('mouseTarget').addEventListener('click', async ()=>{
             userData.totalCatches++; userData.coins+=5; await updateQuestProgress('catch');
@@ -386,23 +451,161 @@
         });
     }
 
-    // Лидерборд (топ5 по уровню главного кота)
-    async function updateLeaderboard() { if(!currentUser) return; let topRef = db.collection('cat_users_v2').orderBy('topCatLevel', 'desc').limit(5); let snap = await topRef.get(); let html=''; snap.forEach(d=>{ html+=`<div>${d.id.slice(0,6)}: уровень ${d.data().topCatLevel||0}</div>`; }); document.getElementById('leaderboardList').innerHTML=html||'Пока нет данных'; }
-    async function pushLeaderboard() { let maxLevel = Math.max(...userData.cats.map(c=>c.level)); await db.collection('cat_users_v2').doc(currentUser.uid).update({ topCatLevel: maxLevel }); updateLeaderboard(); }
-    document.getElementById('updateLeaderboardBtn').addEventListener('click', pushLeaderboard);
+    async function updateLeaderboard() { 
+        if(!currentUser) return; 
+        let topRef = db.collection('cat_users_v2').orderBy('topCatLevel', 'desc').limit(5); 
+        let snap = await topRef.get(); 
+        let html=''; 
+        for (const docSnap of snap.docs) {
+            let uid = docSnap.id;
+            let userNick = "Аноним";
+            try { const userRec = await auth.getUser(uid); userNick = userRec.displayName || uid.slice(0,6); } catch(e) { userNick = uid.slice(0,6); }
+            html+=`<div>${userNick}: уровень ${docSnap.data().topCatLevel||0}</div>`;
+        }
+        document.getElementById('leaderboardList').innerHTML=html||'Пока нет данных'; 
+    }
+    async function pushLeaderboard() { 
+        let maxLevel = Math.max(...userData.cats.map(c=>c.level)); 
+        await db.collection('cat_users_v2').doc(currentUser.uid).set({ topCatLevel: maxLevel }, { merge: true }); 
+        updateLeaderboard(); 
+    }
 
-    // Разведение + мутации
-    function renderBreedingSelect() { if(userData.cats.length<2) document.getElementById('breedSelectArea').innerHTML='Нужно 2 кота'; else document.getElementById('breedSelectArea').innerHTML=`<select id="breedParent1">${userData.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select><select id="breedParent2">${userData.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>`; }
+    function renderBreedingSelect() { 
+        if(userData.cats.length<2) document.getElementById('breedSelectArea').innerHTML='Нужно 2 кота'; 
+        else document.getElementById('breedSelectArea').innerHTML=`<select id="breedParent1">${userData.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select><select id="breedParent2">${userData.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>`; 
+    }
     document.getElementById('breedBtn')?.addEventListener('click', async()=>{ if(userData.coins<100){alert('100 монет');return;} let id1=parseFloat(document.getElementById('breedParent1')?.value), id2=parseFloat(document.getElementById('breedParent2')?.value); if(id1===id2) return; let p1=userData.cats.find(c=>c.id===id1),p2=userData.cats.find(c=>c.id===id2); let childGen=mixGenetics(p1.genetics,p2.genetics); let kitten=createCat(`${p1.name}${p2.name}Котёнок`,childGen); kitten.hunger=85;kitten.happiness=85;kitten.energy=85; userData.cats.push(kitten); userData.coins-=100; await saveToFirestore(); updateUI(); document.getElementById('breedResult').innerHTML=`✨ Новый котёнок ${kitten.name} c ${kitten.genetics.mutation?'мутацией '+kitten.genetics.mutation:''} ✨`; setTimeout(()=>document.getElementById('breedResult').innerHTML='',3000); });
 
-    function renderCatsList(){ let cont=document.getElementById('catsList'); cont.innerHTML=userData.cats.map(c=>`<div class="cat-card ${activeCatId===c.id?'active-cat':''}" data-catid="${c.id}"><div class="cat-avatar">${c.rarity.includes('Мифический')?'🌟🐱':c.rarity==='Легендарный'?'👑🐱':'🐱'}</div><div class="cat-name">${c.name}</div><div>Lv.${c.level} ${c.rarity}</div><small>${c.genetics.mutation?`✨${c.genetics.mutation}`:''}</small></div>`).join(''); document.querySelectorAll('.cat-card').forEach(el=>el.addEventListener('click',()=>{activeCatId=parseFloat(el.dataset.catid);updateUI();}));}
-    function updateUI(){ document.getElementById('coinAmount').innerText=userData.coins; document.getElementById('houseLevel').innerText=userData.houseLevel; renderCatsList(); renderActiveCat(); renderShop(); renderInventory(); renderQuests(); renderFriendship(); renderEquipSelect(); let achCount=Object.keys(userData.achievementsProgress).length; document.getElementById('achievementCount').innerText=achCount; saveToFirestore(); }
-    function renderActiveCat(){ let cat=userData.cats.find(c=>c.id===activeCatId); if(!cat) return; document.getElementById('activeCatName').innerText=cat.name; document.getElementById('catRarityBadge').innerHTML=cat.rarity; document.getElementById('catGenesInfo').innerHTML=`🧬 ${cat.genetics.fur} | ${cat.genetics.eyes} | ${cat.genetics.pattern} ${cat.genetics.mutation?`| 🔥${cat.genetics.mutation}`:''}`; document.getElementById('hungerBar').value=cat.hunger; document.getElementById('happinessBar').value=cat.happiness; document.getElementById('energyBar').value=cat.energy; document.getElementById('hungerVal').innerText=Math.floor(cat.hunger); document.getElementById('happinessVal').innerText=Math.floor(cat.happiness); document.getElementById('energyVal').innerText=Math.floor(cat.energy); let need=100+(cat.level-1)*30; document.getElementById('catLevel').innerText=cat.level; document.getElementById('catExp').innerText=Math.floor(cat.exp); document.getElementById('nextExp').innerText=need; }
-    document.querySelectorAll('.action-btn').forEach(btn=>btn.addEventListener('click',(e)=>{if(btn.dataset.action==='useItem') alert('Откройте вкладку Рюкзак'); else performAction(btn.dataset.action);}));
-    document.getElementById('createCatBtn')?.addEventListener('click', async()=>{ let name=prompt('Имя кота'); if(name){ userData.cats.push(createCat(name)); await saveToFirestore(); updateUI(); } });
-    auth.signInAnonymously().then(async(userCred)=>{ currentUser=userCred.user; document.getElementById('userIdDisplay').innerText='Кото-маг#'+currentUser.uid.slice(0,5); await loadFromFirestore(); initMinigames(); pushLeaderboard(); setInterval(()=>updateLeaderboard(),60000); });
-    // Табы
+    function renderCatsList(){ 
+        let cont=document.getElementById('catsList'); 
+        cont.innerHTML=userData.cats.map(c=>`<div class="cat-card ${activeCatId===c.id?'active-cat':''}" data-catid="${c.id}"><div class="cat-avatar">${c.rarity.includes('Мифический')?'🌟🐱':c.rarity==='Легендарный'?'👑🐱':'🐱'}</div><div class="cat-name">${c.name}</div><div>Lv.${c.level} ${c.rarity}</div><small>${c.genetics.mutation?`✨${c.genetics.mutation}`:''}</small></div>`).join(''); 
+        document.querySelectorAll('.cat-card').forEach(el=>el.addEventListener('click',()=>{activeCatId=parseFloat(el.dataset.catid);updateUI();}));
+    }
+    function updateUI(){ 
+        document.getElementById('coinAmount').innerText=userData.coins; 
+        document.getElementById('houseLevel').innerText=userData.houseLevel; 
+        renderCatsList(); 
+        renderActiveCat(); 
+        renderShop(); 
+        renderInventory(); 
+        renderQuests(); 
+        renderFriendship(); 
+        renderEquipSelect(); 
+        let achCount=Object.keys(userData.achievementsProgress).length; 
+        document.getElementById('achievementCount').innerText=achCount; 
+        saveToFirestore(); 
+    }
+    function renderActiveCat(){ 
+        let cat=userData.cats.find(c=>c.id===activeCatId); 
+        if(!cat) return; 
+        document.getElementById('activeCatName').innerText=cat.name; 
+        document.getElementById('catRarityBadge').innerHTML=cat.rarity; 
+        document.getElementById('catGenesInfo').innerHTML=`🧬 ${cat.genetics.fur} | ${cat.genetics.eyes} | ${cat.genetics.pattern} ${cat.genetics.mutation?`| 🔥${cat.genetics.mutation}`:''}`; 
+        document.getElementById('hungerBar').value=cat.hunger; 
+        document.getElementById('happinessBar').value=cat.happiness; 
+        document.getElementById('energyBar').value=cat.energy; 
+        document.getElementById('hungerVal').innerText=Math.floor(cat.hunger); 
+        document.getElementById('happinessVal').innerText=Math.floor(cat.happiness); 
+        document.getElementById('energyVal').innerText=Math.floor(cat.energy); 
+        let need=100+(cat.level-1)*30; 
+        document.getElementById('catLevel').innerText=cat.level; 
+        document.getElementById('catExp').innerText=Math.floor(cat.exp); 
+        document.getElementById('nextExp').innerText=need; 
+    }
+
+    // Авторизация
+    function showGame() {
+        document.getElementById('authPanel').style.display = 'none';
+        document.getElementById('gameContainer').style.display = 'block';
+    }
+    function showAuth() {
+        if (eventTimeout) clearTimeout(eventTimeout);
+        document.getElementById('authPanel').style.display = 'block';
+        document.getElementById('gameContainer').style.display = 'none';
+    }
+
+    async function handleRegister() {
+        const email = document.getElementById('regEmail').value.trim();
+        const pass = document.getElementById('regPassword').value.trim();
+        const nick = document.getElementById('regNick').value.trim();
+        const errorDiv = document.getElementById('authError');
+        if (!email || !pass || !nick) { errorDiv.innerText = 'Заполните все поля'; errorDiv.style.display='block'; return; }
+        if (pass.length < 6) { errorDiv.innerText = 'Пароль должен быть не менее 6 символов'; errorDiv.style.display='block'; return; }
+        try {
+            const userCred = await auth.createUserWithEmailAndPassword(email, pass);
+            await userCred.user.updateProfile({ displayName: nick });
+            currentUser = userCred.user;
+            document.getElementById('userIdDisplay').innerText = nick;
+            await loadFromFirestore();
+            showGame();
+            initMinigames();
+            pushLeaderboard();
+            setInterval(()=>updateLeaderboard(), 60000);
+        } catch (err) { errorDiv.innerText = err.message; errorDiv.style.display='block'; }
+    }
+
+    async function handleLogin() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPassword').value.trim();
+        const errorDiv = document.getElementById('authError');
+        if (!email || !pass) { errorDiv.innerText = 'Введите email и пароль'; errorDiv.style.display='block'; return; }
+        try {
+            const userCred = await auth.signInWithEmailAndPassword(email, pass);
+            currentUser = userCred.user;
+            const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+            document.getElementById('userIdDisplay').innerText = displayName;
+            await loadFromFirestore();
+            showGame();
+            initMinigames();
+            pushLeaderboard();
+            setInterval(()=>updateLeaderboard(), 60000);
+        } catch (err) { errorDiv.innerText = err.message; errorDiv.style.display='block'; }
+    }
+
+    async function handleGithubLogin() {
+        const provider = new firebase.auth.GithubAuthProvider();
+        try {
+            const result = await auth.signInWithPopup(provider);
+            currentUser = result.user;
+            const displayName = currentUser.displayName || currentUser.email || 'GitHubUser';
+            document.getElementById('userIdDisplay').innerText = displayName;
+            await loadFromFirestore();
+            showGame();
+            initMinigames();
+            pushLeaderboard();
+            setInterval(()=>updateLeaderboard(), 60000);
+        } catch (err) { document.getElementById('authError').innerText = err.message; document.getElementById('authError').style.display='block'; }
+    }
+
+    async function logout() {
+        await auth.signOut();
+        currentUser = null;
+        showAuth();
+        if (eventTimeout) clearTimeout(eventTimeout);
+    }
+
+    // Привязка событий и начальное состояние
+    document.getElementById('registerBtn').addEventListener('click', handleRegister);
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
+    document.getElementById('githubLoginBtn').addEventListener('click', handleGithubLogin);
+    document.getElementById('logoutButton').addEventListener('click', logout);
+    document.getElementById('refreshQuestsBtn').addEventListener('click', async () => {
+        if (userData.coins >= 50) { userData.coins -= 50; userData.quests = []; await initQuests(); await saveToFirestore(); renderQuests(); updateUI(); }
+        else alert('Не хватает 50 монет');
+    });
+    document.getElementById('boostFriendshipBtn').addEventListener('click', async () => {
+        if (!activeCatId) return;
+        let others = userData.cats.filter(c=>c.id !== activeCatId);
+        if (others.length===0) alert('Нет других котов');
+        else if (userData.coins>=30) { userData.coins -= 30; updateFriendship(activeCatId, others[0].id); renderFriendship(); updateUI(); }
+        else alert('Нужно 30 монет');
+    });
+    document.getElementById('updateLeaderboardBtn').addEventListener('click', pushLeaderboard);
+    document.getElementById('createCatBtn').addEventListener('click', async () => { let name=prompt('Имя кота'); if(name){ userData.cats.push(createCat(name)); await saveToFirestore(); updateUI(); } });
+    document.querySelectorAll('.action-btn').forEach(btn=>btn.addEventListener('click',(e)=>{ if(btn.dataset.action==='useItem') alert('Откройте вкладку Рюкзак'); else performAction(btn.dataset.action);}));
     document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.content-panel').forEach(p=>p.classList.remove('active-panel')); document.getElementById(btn.dataset.tab).classList.add('active-panel'); }));
+
+    showAuth();
 </script>
 </body>
 </html>
