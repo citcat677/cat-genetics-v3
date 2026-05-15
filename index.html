@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>⚒️ Gold Rush: битва за сокровища</title>
+    <title>⚒️ Gold Rush — Битва за сокровища</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -38,7 +38,6 @@
             padding: 16px;
             margin-top: 10px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-            position: relative;
         }
         .btn {
             padding: 12px 18px;
@@ -48,13 +47,13 @@
             font-size: 1em;
             cursor: pointer;
             margin: 6px 4px;
-            transition: 0.2s;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
             background: #2a2a4a;
             color: #fff;
+            transition: 0.2s;
         }
         .btn-accent { background: var(--accent); }
         .btn-gold { background: var(--gold); color: #000; }
@@ -76,6 +75,12 @@
             padding: 16px;
             border-radius: 12px;
             text-align: center;
+            margin: 16px 0;
+        }
+        .private-section {
+            background: #1e1e38;
+            padding: 16px;
+            border-radius: 12px;
             margin: 16px 0;
         }
         .board {
@@ -186,27 +191,40 @@
                 <button class="btn btn-sm btn-outline" id="logout-btn">Выйти</button>
             </div>
 
-            <!-- Главное меню (публичное лобби) -->
+            <!-- Главное меню (публичное лобби + приватные игры) -->
             <div id="menu-view">
+                <!-- Публичная игра -->
                 <div class="public-lobby" id="public-lobby-info">
                     <h3>🌍 Публичная игра</h3>
                     <p id="lobby-players-count">Загрузка...</p>
                     <div id="lobby-players-list" class="flex-row" style="justify-content:center;"></div>
-                    <button class="btn btn-gold" id="join-public-btn" style="margin-top:10px;">Войти в игру</button>
+                    <button class="btn btn-gold" id="join-public-btn">Войти в публичную игру</button>
                     <p id="lobby-message" style="color:var(--muted); font-size:0.8em;"></p>
                 </div>
-                <button class="btn btn-info btn-sm" id="show-rules-btn">📖 Правила</button>
+
+                <!-- Приватные игры -->
+                <div class="private-section">
+                    <h3>🔒 Приватная игра</h3>
+                    <button class="btn btn-accent" id="create-private-btn" style="width:100%;">Создать приватную игру</button>
+                    <div style="margin:12px 0;">
+                        <input type="text" id="join-code" class="input" placeholder="Код приватной игры" style="text-align:center; text-transform:uppercase;">
+                        <button class="btn btn-info" id="join-private-btn" style="width:100%;">Присоединиться</button>
+                    </div>
+                    <div id="private-games-list" style="font-size:0.85em; color:var(--muted);"></div>
+                </div>
+
+                <button class="btn btn-info btn-sm" id="show-rules-btn" style="width:100%;">📖 Правила</button>
             </div>
 
-            <!-- Лобби ожидания (видно после присоединения) -->
-            <div id="lobby-view" class="hidden">
-                <h3>Ожидание игроков</h3>
-                <div id="lobby-detail-players"></div>
-                <button class="btn btn-accent" id="start-game-btn" style="display:none;">Начать игру</button>
-                <p id="lobby-status" style="color:var(--muted); text-align:center;"></p>
+            <!-- Лобби приватной игры -->
+            <div id="private-lobby-view" class="hidden">
+                <h3>Приватная игра <span id="private-lobby-code"></span></h3>
+                <div id="private-lobby-players"></div>
+                <button class="btn btn-accent" id="private-start-btn" style="display:none;">Начать игру</button>
+                <p id="private-lobby-status" style="color:var(--muted);"></p>
             </div>
 
-            <!-- Игровой процесс -->
+            <!-- Игровой процесс (общий для публичных и приватных) -->
             <div id="game-view" class="hidden" style="position:relative;">
                 <button class="rules-btn" id="game-rules-btn">?</button>
                 <div class="flex-between">
@@ -220,28 +238,28 @@
             <!-- Админ-панель -->
             <div id="admin-view" class="hidden mt-2">
                 <h4>⚙️ Админ</h4>
-                <button class="btn btn-sm" id="admin-reset-game">Сбросить публичную игру</button>
+                <button class="btn btn-sm" id="admin-reset-public">Сбросить публичную игру</button>
             </div>
         </div>
     </div>
+
     <div id="notification" class="hidden"></div>
-    <!-- Модальное окно для правил -->
     <div id="rules-modal" class="modal-overlay hidden">
         <div class="modal">
             <h2>📖 Правила игры</h2>
             <p>⚒️ <b>Цель:</b> накопить 100 золота или остаться последним выжившим.</p>
             <p>🪙 <b>Клетки:</b> золото (+10💰), ловушки (-15❤️), монстры (-20❤️, можно убить оружием).</p>
-            <p>🎮 <b>Ход:</b> используйте стрелки, чтобы двигаться. Нельзя ходить на занятые клетки.</p>
-            <p>🧪 <b>Зелье:</b> восстанавливает 30 HP (тратится).</p>
-            <p>⚔️ <b>Атака:</b> бьёт соседнего игрока (-20 HP).</p>
-            <p>🔄 Каждый ход есть шанс появления нового золота или ловушки.</p>
+            <p>🎮 <b>Ход:</b> используйте стрелки. Нельзя ходить на занятые клетки.</p>
+            <p>🧪 <b>Зелье:</b> +30 HP (тратится).</p>
+            <p>⚔️ <b>Атака:</b> бьёт соседа (-20 HP).</p>
+            <p>🔄 Случайные события: новое золото или ловушка каждый ход (30%).</p>
             <button class="btn btn-accent" onclick="document.getElementById('rules-modal').classList.add('hidden')">Понятно</button>
         </div>
     </div>
 
     <script>
         (function() {
-            // Firebase инициализация
+            // Firebase
             firebase.initializeApp({
                 apiKey: "AIzaSyDS1y5XkbXMGEFDm6pcvgOLXXdcWlCtjBQ",
                 authDomain: "cat-genetics-v12.firebaseapp.com",
@@ -252,34 +270,34 @@
             });
             const auth = firebase.auth();
             const db = firebase.firestore();
-            const PUBLIC_GAME_ID = 'main_lobby';
 
-            // Глобальные переменные
-            let currentUser = null;
-            let gameUnsubscribe = null;
-            let isAdmin = false;
+            const PUBLIC_GAME_ID = 'main_lobby';
             const BOARD_SIZE = 6;
 
-            // DOM элементы
+            let currentUser = null;
+            let currentGameRef = null; // ссылка на текущую игру (публичную или приватную)
+            let currentGameId = null; // ID документа
+            let gameUnsubscribe = null;
+            let isAdmin = false;
+
+            // DOM
             const authScreen = document.getElementById('auth-screen');
             const mainScreen = document.getElementById('main-screen');
             const menuView = document.getElementById('menu-view');
-            const lobbyView = document.getElementById('lobby-view');
+            const privateLobbyView = document.getElementById('private-lobby-view');
             const gameView = document.getElementById('game-view');
             const adminView = document.getElementById('admin-view');
             const rulesModal = document.getElementById('rules-modal');
 
-            // Уведомления
-            function notify(msg, type = 'info') {
+            function notify(msg, type='info') {
                 const el = document.getElementById('notification');
                 el.textContent = msg;
-                el.className = '';
-                el.style.background = type === 'error' ? '#e94560' : '#4caf84';
+                el.style.background = type==='error' ? '#e94560' : '#4caf84';
                 el.classList.remove('hidden');
                 setTimeout(() => el.classList.add('hidden'), 2500);
             }
 
-            // Обработчик авторизации
+            // Авторизация
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentUser = user;
@@ -288,8 +306,7 @@
                     mainScreen.classList.remove('hidden');
                     document.getElementById('user-info').textContent = `👤 ${user.displayName || user.email.split('@')[0]}`;
                     document.getElementById('logout-btn').onclick = () => auth.signOut();
-                    if (isAdmin) adminView.classList.remove('hidden');
-                    else adminView.classList.add('hidden');
+                    adminView.classList.toggle('hidden', !isAdmin);
                     loadMainMenu();
                 } else {
                     currentUser = null;
@@ -299,81 +316,55 @@
                 }
             });
 
-            // Авторизация
             let isLogin = true;
             document.getElementById('toggle-mode').onclick = () => {
                 isLogin = !isLogin;
                 document.getElementById('auth-btn').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
                 document.getElementById('toggle-mode').textContent = isLogin ? 'Регистрация' : 'Войти';
                 document.getElementById('name-group').style.display = isLogin ? 'none' : 'block';
-                document.getElementById('auth-error').textContent = '';
             };
             document.getElementById('auth-btn').onclick = () => {
                 const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value.trim();
                 const username = document.getElementById('username')?.value.trim();
                 const errorEl = document.getElementById('auth-error');
-                if (!email || !password) { errorEl.textContent = 'Введите email и пароль'; return; }
+                if (!email || !password) { errorEl.textContent = 'Заполните поля'; return; }
                 if (password.length < 6) { errorEl.textContent = 'Минимум 6 символов'; return; }
-                const action = isLogin ?
-                    auth.signInWithEmailAndPassword(email, password) :
-                    auth.createUserWithEmailAndPassword(email, password).then(r =>
-                        r.user.updateProfile({ displayName: username || email.split('@')[0] })
-                    );
+                const action = isLogin ? auth.signInWithEmailAndPassword(email, password)
+                    : auth.createUserWithEmailAndPassword(email, password).then(r => r.user.updateProfile({displayName: username || email.split('@')[0]}));
                 action.catch(e => { errorEl.textContent = e.message; });
             };
 
-            // Загрузка главного меню (публичное лобби)
+            // Загрузка главного меню
             async function loadMainMenu() {
                 menuView.classList.remove('hidden');
-                lobbyView.classList.add('hidden');
+                privateLobbyView.classList.add('hidden');
                 gameView.classList.add('hidden');
                 if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
 
-                // Ссылка на публичную игру
-                const gameRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
-                const doc = await gameRef.get();
-                if (!doc.exists) {
-                    // Создаем публичную игру
-                    await gameRef.set({
-                        status: 'waiting',
-                        players: [],
-                        board: null,
-                        currentTurn: 0,
-                        gameOver: false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                // Инициализация публичной игры
+                const publicRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
+                const publicDoc = await publicRef.get();
+                if (!publicDoc.exists) {
+                    await publicRef.set({
+                        status: 'waiting', players: [], board: null, currentTurn: 0, gameOver: false
                     });
                 } else {
-                    const data = doc.data();
-                    // Если игра завершена, сбрасываем
+                    const data = publicDoc.data();
                     if (data.status === 'finished') {
-                        await gameRef.update({
-                            status: 'waiting',
-                            players: [],
-                            board: null,
-                            currentTurn: 0,
-                            gameOver: false
-                        });
+                        await publicRef.update({ status: 'waiting', players: [], board: null, currentTurn: 0, gameOver: false });
                     }
                 }
-                // Подписываемся на публичную игру
-                gameUnsubscribe = gameRef.onSnapshot(snap => {
+                // Подписка на публичную игру (только для отображения в меню)
+                if (gameUnsubscribe) gameUnsubscribe();
+                gameUnsubscribe = publicRef.onSnapshot(snap => {
                     const game = snap.data();
                     if (!game) return;
                     updatePublicLobbyUI(game);
-                    if (game.status === 'active' && game.players.some(p => p.uid === currentUser?.uid)) {
-                        // Игрок уже в игре, переключаемся на gameView
-                        startGameView();
-                    } else if (game.status === 'waiting' && game.players.some(p => p.uid === currentUser?.uid)) {
-                        // Игрок в лобби ожидания
-                        showWaitingLobby(game);
-                    } else {
-                        // Игрок не в игре, показываем меню
-                        menuView.classList.remove('hidden');
-                        lobbyView.classList.add('hidden');
-                        gameView.classList.add('hidden');
-                    }
                 });
+
+                // Загружаем список приватных игр
+                loadPrivateGamesList();
             }
 
             function updatePublicLobbyUI(game) {
@@ -387,29 +378,28 @@
                 if (game.status === 'waiting') {
                     if (alreadyIn) {
                         joinBtn.style.display = 'none';
-                        msgEl.textContent = 'Вы в лобби, ожидайте начала';
+                        msgEl.textContent = 'Вы уже в лобби';
                     } else if (game.players.length >= 3) {
                         joinBtn.style.display = 'none';
                         msgEl.textContent = 'Игра заполнена';
                     } else {
                         joinBtn.style.display = 'inline-block';
-                        joinBtn.textContent = 'Войти в игру';
+                        joinBtn.textContent = 'Войти в публичную игру';
                         msgEl.textContent = '';
                     }
-                } else if (game.status === 'active') {
+                } else {
                     joinBtn.style.display = 'none';
-                    msgEl.textContent = alreadyIn ? 'Игра идёт!' : 'Игра уже началась, наблюдайте';
+                    msgEl.textContent = alreadyIn ? 'Идёт игра!' : 'Идёт игра';
                 }
             }
 
             // Присоединение к публичной игре
             document.getElementById('join-public-btn').addEventListener('click', async () => {
                 if (!currentUser) return;
-                const gameRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
+                const publicRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
                 try {
-                    await db.runTransaction(async (transaction) => {
-                        const doc = await transaction.get(gameRef);
-                        if (!doc.exists) throw new Error('Игра не существует');
+                    await db.runTransaction(async trans => {
+                        const doc = await trans.get(publicRef);
                         const game = doc.data();
                         if (game.status !== 'waiting') throw new Error('Игра уже началась');
                         if (game.players.length >= 3) throw new Error('Нет мест');
@@ -418,34 +408,103 @@
                             uid: currentUser.uid,
                             email: currentUser.email,
                             name: currentUser.displayName || 'Игрок',
-                            hp: 100,
-                            gold: 0,
-                            items: ['potion'],
-                            position: { x: game.players.length, y: game.players.length } // разные стартовые позиции
+                            hp: 100, gold: 0, items: ['potion'],
+                            position: { x: game.players.length, y: game.players.length }
                         };
                         game.players.push(newPlayer);
-                        transaction.update(gameRef, { players: game.players });
+                        trans.update(publicRef, { players: game.players });
                     });
-                    notify('Вы присоединились к игре!');
-                } catch (e) {
-                    notify(e.message, 'error');
-                }
+                    notify('Вы в публичной игре!');
+                } catch (e) { notify(e.message, 'error'); }
             });
 
-            // Показ экрана ожидания (для уже присоединившихся)
-            function showWaitingLobby(game) {
+            // Приватные игры
+            async function loadPrivateGamesList() {
+                const snap = await db.collection('private_games').where('status', '==', 'waiting').limit(5).get();
+                const listEl = document.getElementById('private-games-list');
+                if (snap.empty) {
+                    listEl.innerHTML = 'Нет активных приватных игр';
+                } else {
+                    listEl.innerHTML = snap.docs.map(d => {
+                        const g = d.data();
+                        return `<div>Игра ${g.code} (${g.players.length}/3)</div>`;
+                    }).join('');
+                }
+            }
+
+            document.getElementById('create-private-btn').addEventListener('click', async () => {
+                if (!currentUser) return;
+                const code = Math.random().toString(36).substring(2,6).toUpperCase();
+                const gameData = {
+                    code: code,
+                    players: [{
+                        uid: currentUser.uid, email: currentUser.email,
+                        name: currentUser.displayName || 'Игрок',
+                        hp: 100, gold: 0, items: ['potion'],
+                        position: { x: 0, y: 0 }
+                    }],
+                    status: 'waiting',
+                    board: null,
+                    currentTurn: 0,
+                    gameOver: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                const docRef = await db.collection('private_games').add(gameData);
+                currentGameRef = docRef;
+                currentGameId = docRef.id;
+                enterPrivateLobby(docRef.id, code);
+            });
+
+            document.getElementById('join-private-btn').addEventListener('click', async () => {
+                const code = document.getElementById('join-code').value.trim().toUpperCase();
+                if (!code) return notify('Введите код', 'error');
+                const snap = await db.collection('private_games').where('code','==',code).where('status','==','waiting').get();
+                if (snap.empty) return notify('Игра не найдена', 'error');
+                const doc = snap.docs[0];
+                const game = doc.data();
+                if (game.players.length >= 3) return notify('Игра заполнена', 'error');
+                if (game.players.some(p => p.uid === currentUser.uid)) {
+                    currentGameRef = doc.ref;
+                    currentGameId = doc.id;
+                    enterPrivateLobby(doc.id, code);
+                    return;
+                }
+                await doc.ref.update({
+                    players: firebase.firestore.FieldValue.arrayUnion({
+                        uid: currentUser.uid, email: currentUser.email,
+                        name: currentUser.displayName || 'Игрок',
+                        hp: 100, gold: 0, items: ['potion'],
+                        position: { x: BOARD_SIZE-1, y: BOARD_SIZE-1 }
+                    })
+                });
+                currentGameRef = doc.ref;
+                currentGameId = doc.id;
+                enterPrivateLobby(doc.id, code);
+            });
+
+            function enterPrivateLobby(gameId, code) {
                 menuView.classList.add('hidden');
-                lobbyView.classList.remove('hidden');
+                privateLobbyView.classList.remove('hidden');
                 gameView.classList.add('hidden');
-                const playersDiv = document.getElementById('lobby-detail-players');
-                playersDiv.innerHTML = game.players.map(p => `
-                    <div class="player-card">${p.name} ${p.uid === currentUser.uid ? '(вы)' : ''}</div>
-                `).join('');
+                document.getElementById('private-lobby-code').textContent = code;
+                if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
+                gameUnsubscribe = db.collection('private_games').doc(gameId).onSnapshot(snap => {
+                    const game = snap.data();
+                    if (!game) { notify('Игра удалена', 'error'); loadMainMenu(); return; }
+                    if (game.status === 'active') startPrivateGame(gameId);
+                    else if (game.status === 'finished') { notify('Игра завершена'); loadMainMenu(); }
+                    else updatePrivateLobby(game);
+                });
+            }
+
+            function updatePrivateLobby(game) {
+                const div = document.getElementById('private-lobby-players');
+                div.innerHTML = game.players.map(p => `<div class="player-card">${p.name} ${p.uid===currentUser.uid?'(вы)':''}</div>`).join('');
                 const isCreator = game.players[0]?.uid === currentUser.uid;
-                document.getElementById('start-game-btn').style.display = (isCreator && game.players.length === 3) ? 'block' : 'none';
-                document.getElementById('lobby-status').textContent = game.players.length < 3 ? 'Ожидание игроков...' : 'Все готовы!';
-                document.getElementById('start-game-btn').onclick = async () => {
-                    await db.collection('public_games').doc(PUBLIC_GAME_ID).update({
+                document.getElementById('private-start-btn').style.display = (isCreator && game.players.length===3) ? 'block' : 'none';
+                document.getElementById('private-lobby-status').textContent = game.players.length < 3 ? 'Ожидание игроков...' : 'Можно начинать!';
+                document.getElementById('private-start-btn').onclick = async () => {
+                    await db.collection('private_games').doc(currentGameId).update({
                         status: 'active',
                         board: generateRandomBoard(),
                         currentTurn: 0
@@ -453,12 +512,25 @@
                 };
             }
 
-            // Генерация случайного поля
+            function startPrivateGame(gameId) {
+                privateLobbyView.classList.add('hidden');
+                gameView.classList.remove('hidden');
+                currentGameRef = db.collection('private_games').doc(gameId);
+                currentGameId = gameId;
+                if (gameUnsubscribe) gameUnsubscribe();
+                gameUnsubscribe = currentGameRef.onSnapshot(snap => {
+                    const game = snap.data();
+                    if (!game || game.status === 'finished') { notify('Игра завершена'); loadMainMenu(); return; }
+                    renderGame(game);
+                });
+            }
+
+            // Общие функции игры
             function generateRandomBoard() {
                 const board = [];
-                for (let y = 0; y < BOARD_SIZE; y++) {
+                for (let y=0; y<BOARD_SIZE; y++) {
                     const row = [];
-                    for (let x = 0; x < BOARD_SIZE; x++) {
+                    for (let x=0; x<BOARD_SIZE; x++) {
                         const r = Math.random();
                         if (r < 0.2) row.push('gold');
                         else if (r < 0.35) row.push('trap');
@@ -470,67 +542,40 @@
                 return board;
             }
 
-            // Старт игры (переход в gameView)
-            function startGameView() {
-                lobbyView.classList.add('hidden');
-                gameView.classList.remove('hidden');
-                // Показываем туториал, если еще не видели
-                if (!localStorage.getItem('tutorial_seen')) {
-                    rulesModal.classList.remove('hidden');
-                    localStorage.setItem('tutorial_seen', '1');
-                }
-                // Подписка на игру уже активна через gameUnsubscribe
-            }
-
-            // Рендер игры (вызывается из onSnapshot)
             function renderGame(game) {
                 const me = game.players.find(p => p.uid === currentUser.uid);
                 if (!me) {
-                    // Наблюдатель?
                     document.getElementById('game-status').textContent = 'Наблюдение';
-                    document.getElementById('player-stats').innerHTML = '';
-                    document.getElementById('board-container').innerHTML = '';
-                    document.getElementById('controls').innerHTML = '';
                     return;
                 }
-                document.getElementById('game-status').textContent = game.gameOver ?
-                    '🏁 Игра окончена!' :
-                    `Ход: ${game.players[game.currentTurn]?.name || '...'}`;
-                // Статистика игроков
+                document.getElementById('game-status').textContent = game.gameOver ? '🏁 Игра окончена!' : `Ход: ${game.players[game.currentTurn]?.name || '...'}`;
                 const statsDiv = document.getElementById('player-stats');
                 statsDiv.innerHTML = game.players.map(p => `
                     <div style="flex:1; text-align:center;">
-                        <strong>${p.name}</strong><br>
-                        ❤️${p.hp} 💰${p.gold}
+                        <strong>${p.name}</strong><br> ❤️${p.hp} 💰${p.gold}
                         <div class="hp-bar" style="margin:4px auto;"><div class="hp-fill" style="width:${p.hp}%;"></div></div>
-                    </div>
-                `).join('');
+                    </div>`).join('');
 
-                // Игровое поле
                 const boardContainer = document.getElementById('board-container');
                 boardContainer.innerHTML = '';
                 const boardEl = document.createElement('div');
                 boardEl.className = 'board';
                 boardEl.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, var(--cell-size))`;
-                // Вычисляем размер клетки для позиционирования токенов
-                const cellSize = (boardContainer.clientWidth - 3*(BOARD_SIZE-1)) / BOARD_SIZE; // примерно
                 const gap = 3;
-                // Ячейки
-                for (let y = 0; y < BOARD_SIZE; y++) {
-                    for (let x = 0; x < BOARD_SIZE; x++) {
+                const cellSize = (boardContainer.clientWidth - gap*(BOARD_SIZE-1)) / BOARD_SIZE;
+                for (let y=0; y<BOARD_SIZE; y++) {
+                    for (let x=0; x<BOARD_SIZE; x++) {
                         const cell = document.createElement('div');
                         cell.className = 'cell ' + (game.board[y][x] || 'empty');
-                        cell.textContent = { gold: '🪙', trap: '💀', monster: '👾' }[game.board[y][x]] || '';
+                        cell.textContent = { gold:'🪙', trap:'💀', monster:'👾' }[game.board[y][x]] || '';
                         boardEl.appendChild(cell);
                     }
                 }
-                // Токены игроков
                 game.players.forEach((p, idx) => {
                     const token = document.createElement('div');
                     token.className = 'player-token';
-                    token.style.background = ['#e94560', '#4a90d9', '#f0c040'][idx % 3];
-                    token.textContent = idx + 1;
-                    // Позиция: по центру клетки
+                    token.style.background = ['#e94560','#4a90d9','#f0c040'][idx%3];
+                    token.textContent = idx+1;
                     const left = p.position.x * (cellSize + gap) + cellSize/2 - 14;
                     const top = p.position.y * (cellSize + gap) + cellSize/2 - 14;
                     token.style.left = left + 'px';
@@ -540,7 +585,6 @@
                 });
                 boardContainer.appendChild(boardEl);
 
-                // Управление
                 const controls = document.getElementById('controls');
                 controls.innerHTML = '';
                 if (!game.gameOver && game.players[game.currentTurn]?.uid === currentUser.uid) {
@@ -554,204 +598,104 @@
                         <div style="margin-top:10px;">
                             <button class="btn btn-gold btn-sm" onclick="useItem()">🧪 Зелье</button>
                             <button class="btn btn-gold btn-sm" onclick="attackPlayer()">⚔️ Атака</button>
-                        </div>
-                    `;
+                        </div>`;
                 }
             }
 
-            // Подписка на игру в gameView (переиспользуем gameUnsubscribe)
-            // Когда игра активна, рендерим
-            if (gameUnsubscribe) {
-                // уже подписаны в loadMainMenu, но рендер происходит в onSnapshot
-                // нам нужно обновить onSnapshot, чтобы он вызывал renderGame если status active
-                // Переопределим подписку в loadMainMenu так, чтобы она обрабатывала все состояния.
-                // Фактически, текущий код в loadMainMenu уже вызывает updatePublicLobbyUI, showWaitingLobby, startGameView.
-                // Но нам нужно, чтобы в gameView рендерилось при изменениях. Добавим вызов renderGame внутри onSnapshot при status==='active' и игрок в игре.
-                // Модифицируем onSnapshot в loadMainMenu:
-            }
-            // Перепишем loadMainMenu более универсально
-            async function loadMainMenu() {
-                menuView.classList.remove('hidden');
-                lobbyView.classList.add('hidden');
-                gameView.classList.add('hidden');
-                if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
-
-                const gameRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
-                const doc = await gameRef.get();
-                if (!doc.exists) {
-                    await gameRef.set({
-                        status: 'waiting',
-                        players: [],
-                        board: null,
-                        currentTurn: 0,
-                        gameOver: false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } else {
-                    const data = doc.data();
-                    if (data.status === 'finished') {
-                        await gameRef.update({
-                            status: 'waiting',
-                            players: [],
-                            board: null,
-                            currentTurn: 0,
-                            gameOver: false
-                        });
-                    }
-                }
-
-                gameUnsubscribe = gameRef.onSnapshot(snap => {
-                    const game = snap.data();
-                    if (!game) return;
-                    const me = game.players.find(p => p.uid === currentUser?.uid);
-                    if (game.status === 'active' && me) {
-                        // Игрок в активной игре
-                        menuView.classList.add('hidden');
-                        lobbyView.classList.add('hidden');
-                        gameView.classList.remove('hidden');
-                        renderGame(game);
-                    } else if (game.status === 'waiting' && me) {
-                        // В лобби
-                        menuView.classList.add('hidden');
-                        lobbyView.classList.remove('hidden');
-                        gameView.classList.add('hidden');
-                        showWaitingLobby(game);
-                    } else {
-                        // Не в игре
-                        menuView.classList.remove('hidden');
-                        lobbyView.classList.add('hidden');
-                        gameView.classList.add('hidden');
-                        updatePublicLobbyUI(game);
-                    }
-                });
-            }
-
-            // Движение игрока
+            // Игровые действия
             window.movePlayer = async (dir) => {
-                const gameRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
+                if (!currentGameRef) return;
                 try {
-                    await db.runTransaction(async (transaction) => {
-                        const doc = await transaction.get(gameRef);
-                        if (!doc.exists) throw new Error('Игра не найдена');
+                    await db.runTransaction(async trans => {
+                        const doc = await trans.get(currentGameRef);
                         const game = doc.data();
                         if (game.gameOver || game.players[game.currentTurn]?.uid !== currentUser.uid) throw new Error('Не ваш ход');
                         const player = game.players[game.currentTurn];
-                        let newX = player.position.x;
-                        let newY = player.position.y;
-                        if (dir === 'up') newY--;
-                        else if (dir === 'down') newY++;
-                        else if (dir === 'left') newX--;
-                        else if (dir === 'right') newX++;
-                        if (newX < 0 || newX >= BOARD_SIZE || newY < 0 || newY >= BOARD_SIZE) throw new Error('Край карты');
-                        if (game.players.some(p => p.position.x === newX && p.position.y === newY)) throw new Error('Клетка занята');
-                        const cellType = game.board[newY][newX];
-                        if (cellType === 'gold') {
-                            player.gold += 10;
-                            game.board[newY][newX] = 'empty';
-                        } else if (cellType === 'trap') {
-                            player.hp -= 15;
-                        } else if (cellType === 'monster') {
-                            const weaponIdx = player.items.indexOf('weapon');
-                            if (weaponIdx >= 0) {
-                                player.items.splice(weaponIdx, 1);
+                        let nx = player.position.x, ny = player.position.y;
+                        if (dir==='up') ny--; else if (dir==='down') ny++; else if (dir==='left') nx--; else if (dir==='right') nx++;
+                        if (nx<0||nx>=BOARD_SIZE||ny<0||ny>=BOARD_SIZE) throw new Error('Край карты');
+                        if (game.players.some(p => p.position.x===nx && p.position.y===ny)) throw new Error('Занято');
+                        const cell = game.board[ny][nx];
+                        if (cell === 'gold') { player.gold += 10; game.board[ny][nx] = 'empty'; }
+                        else if (cell === 'trap') { player.hp -= 15; }
+                        else if (cell === 'monster') {
+                            if (player.items.includes('weapon')) {
+                                player.items.splice(player.items.indexOf('weapon'),1);
                                 player.gold += 20;
-                            } else {
-                                player.hp -= 20;
-                            }
+                            } else { player.hp -= 20; }
                         }
-                        player.position = { x: newX, y: newY };
+                        player.position = {x:nx, y:ny};
                         if (player.hp <= 0) {
                             game.players = game.players.filter(p => p.uid !== player.uid);
                             if (game.players.length <= 1) game.gameOver = true;
                         }
                         if (player.gold >= 100) game.gameOver = true;
-                        // Случайное событие (30% шанс) – появляется золото или ловушка
                         if (!game.gameOver && Math.random() < 0.3) {
                             const emptyCells = [];
-                            for (let y = 0; y < BOARD_SIZE; y++) {
-                                for (let x = 0; x < BOARD_SIZE; x++) {
-                                    if (game.board[y][x] === 'empty') emptyCells.push({x, y});
-                                }
-                            }
-                            if (emptyCells.length > 0) {
-                                const randCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                                game.board[randCell.y][randCell.x] = Math.random() < 0.5 ? 'gold' : 'trap';
+                            for (let y=0; y<BOARD_SIZE; y++) for (let x=0; x<BOARD_SIZE; x++) if (game.board[y][x]==='empty') emptyCells.push({x,y});
+                            if (emptyCells.length) {
+                                const rc = emptyCells[Math.floor(Math.random()*emptyCells.length)];
+                                game.board[rc.y][rc.x] = Math.random()<0.5?'gold':'trap';
                             }
                         }
-                        game.currentTurn = (game.currentTurn + 1) % game.players.length;
-                        transaction.update(gameRef, { ...game });
+                        game.currentTurn = (game.currentTurn+1) % game.players.length;
+                        trans.update(currentGameRef, game);
                     });
                 } catch (e) { notify(e.message, 'error'); }
             };
 
             window.useItem = async () => {
-                const gameRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
+                if (!currentGameRef) return;
                 try {
-                    await db.runTransaction(async (transaction) => {
-                        const doc = await transaction.get(gameRef);
+                    await db.runTransaction(async trans => {
+                        const doc = await trans.get(currentGameRef);
                         const game = doc.data();
                         const player = game.players[game.currentTurn];
                         if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
-                        const potionIdx = player.items.indexOf('potion');
-                        if (potionIdx < 0) throw new Error('Нет зелья');
-                        player.items.splice(potionIdx, 1);
+                        const idx = player.items.indexOf('potion');
+                        if (idx < 0) throw new Error('Нет зелья');
+                        player.items.splice(idx,1);
                         player.hp = Math.min(100, player.hp + 30);
-                        game.currentTurn = (game.currentTurn + 1) % game.players.length;
-                        transaction.update(gameRef, { players: game.players, currentTurn: game.currentTurn });
+                        game.currentTurn = (game.currentTurn+1) % game.players.length;
+                        trans.update(currentGameRef, { players: game.players, currentTurn: game.currentTurn });
                     });
                 } catch (e) { notify(e.message, 'error'); }
             };
 
             window.attackPlayer = async () => {
-                const gameRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
+                if (!currentGameRef) return;
                 try {
-                    await db.runTransaction(async (transaction) => {
-                        const doc = await transaction.get(gameRef);
+                    await db.runTransaction(async trans => {
+                        const doc = await trans.get(currentGameRef);
                         const game = doc.data();
                         const player = game.players[game.currentTurn];
                         if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
-                        const target = game.players.find(p =>
-                            p.uid !== player.uid &&
-                            Math.abs(p.position.x - player.position.x) + Math.abs(p.position.y - player.position.y) === 1
-                        );
-                        if (!target) throw new Error('Нет соседа для атаки');
+                        const target = game.players.find(p => p.uid!==player.uid &&
+                            Math.abs(p.position.x-player.position.x)+Math.abs(p.position.y-player.position.y)===1);
+                        if (!target) throw new Error('Нет соседа');
                         target.hp -= 20;
                         if (target.hp <= 0) {
-                            game.players = game.players.filter(p => p.uid !== target.uid);
+                            game.players = game.players.filter(p => p.uid!==target.uid);
                             if (game.players.length <= 1) game.gameOver = true;
                         }
-                        game.currentTurn = (game.currentTurn + 1) % game.players.length;
-                        transaction.update(gameRef, { players: game.players, currentTurn: game.currentTurn, gameOver: game.gameOver });
+                        game.currentTurn = (game.currentTurn+1) % game.players.length;
+                        trans.update(currentGameRef, { players: game.players, currentTurn: game.currentTurn, gameOver: game.gameOver });
                     });
                 } catch (e) { notify(e.message, 'error'); }
             };
 
-            // Кнопка правил в меню
-            document.getElementById('show-rules-btn').addEventListener('click', () => {
-                rulesModal.classList.remove('hidden');
-            });
-            // Кнопка правил в игре
-            document.getElementById('game-rules-btn').addEventListener('click', () => {
-                rulesModal.classList.remove('hidden');
-            });
+            document.getElementById('show-rules-btn').addEventListener('click', () => rulesModal.classList.remove('hidden'));
+            document.getElementById('game-rules-btn').addEventListener('click', () => rulesModal.classList.remove('hidden'));
 
-            // Админ сброс игры
-            document.getElementById('admin-reset-game')?.addEventListener('click', async () => {
+            document.getElementById('admin-reset-public')?.addEventListener('click', async () => {
                 if (!isAdmin) return;
                 await db.collection('public_games').doc(PUBLIC_GAME_ID).update({
-                    status: 'waiting',
-                    players: [],
-                    board: null,
-                    currentTurn: 0,
-                    gameOver: false
+                    status:'waiting', players:[], board:null, currentTurn:0, gameOver:false
                 });
                 notify('Публичная игра сброшена');
             });
 
-            // Очистка при уходе
-            window.addEventListener('beforeunload', () => {
-                if (gameUnsubscribe) gameUnsubscribe();
-            });
+            window.addEventListener('beforeunload', () => { if (gameUnsubscribe) gameUnsubscribe(); });
         })();
     </script>
 </body>
