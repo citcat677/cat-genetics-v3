@@ -2,565 +2,1954 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>CatGenetics: Симбиоз генов и разведения котов</title>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐱 Cat Genetics Empire — Разведение котов</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
+    </script>
     <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel: #16213e;
+            --card: #0f3460;
+            --accent: #e94560;
+            --gold: #f0c040;
+            --text: #e0e0e0;
+            --muted: #a0a0b8;
+            --green: #4caf84;
+            --blue: #4a90d9;
+            --pink: #e87d9e;
+            --orange: #f09050;
+            --purple: #9b59b6;
+            --rare: #ff6b9d;
+            --legendary: #ffd700;
+            --epic: #c084fc;
+            --common: #a0a0a0;
+            --uncommon: #4caf84;
+            --border: #2a2a4a;
+            --input-bg: #1e1e38;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --radius: 14px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
-            user-select: none;
         }
         body {
-            margin: 0;
-            background: linear-gradient(145deg, #2b3b2c 0%, #1e2a1f 100%);
-            font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
-            color: #faf0e1;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: radial-gradient(ellipse at 30% 20%, #1a1a40 0%, #0d0d20 60%, #080818 100%);
+            background-attachment: fixed;
+        }
+        ::-webkit-scrollbar {
+            width: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #12122a;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a60;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a5a80;
+        }
+
+        /* Header */
+        #app-header {
+            background: var(--panel);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        #app-header .logo {
+            font-size: 1.6em;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #f0c040, #e94560, #f0c040);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            user-select: none;
+        }
+        #user-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        #user-info .currency {
+            background: var(--card);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border);
+        }
+        .btn {
+            padding: 9px 18px;
+            border-radius: 22px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: var(--transition);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            font-size: 0.78em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-accent {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(233, 68, 96, 0.35);
+        }
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(233, 68, 96, 0.5);
+            filter: brightness(1.1);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+        }
+        .btn-outline:hover {
+            background: rgba(233, 68, 96, 0.1);
+        }
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 0.7em;
+            border-radius: 16px;
+        }
+        .btn-green {
+            background: var(--green);
+            color: #fff;
+        }
+        .btn-green:hover {
+            filter: brightness(1.2);
+            transform: translateY(-1px);
+        }
+        .btn-blue {
+            background: var(--blue);
+            color: #fff;
+        }
+        .btn-blue:hover {
+            filter: brightness(1.2);
+        }
+        .btn-purple {
+            background: var(--purple);
+            color: #fff;
+        }
+        .btn-purple:hover {
+            filter: brightness(1.2);
+        }
+
+        /* Auth */
+        #auth-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
             padding: 20px;
         }
-        .app-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: rgba(0,0,0,0.45);
-            backdrop-filter: blur(2px);
-            border-radius: 2.5rem;
-            padding: 1.2rem;
-            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,215,150,0.3);
-        }
-        /* auth panel */
-        .auth-panel {
-            background: #2f2e2bdd;
-            border-radius: 2rem;
-            padding: 2rem;
+        .auth-card {
+            background: var(--panel);
+            padding: 40px 32px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            max-width: 420px;
+            width: 100%;
             text-align: center;
-            max-width: 480px;
-            margin: 2rem auto;
+        }
+        .auth-card h2 {
+            margin-bottom: 8px;
+            font-size: 1.8em;
+            background: linear-gradient(135deg, #f0c040, #e94560);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .auth-card p {
+            color: var(--muted);
+            margin-bottom: 20px;
+            font-size: 0.9em;
         }
         .input-group {
-            margin: 1rem 0;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
+            margin-bottom: 14px;
+            text-align: left;
         }
-        input, button, select {
-            padding: 12px 18px;
-            border-radius: 60px;
-            border: none;
-            font-weight: bold;
-            font-size: 1rem;
-            background: #fff6e8;
-            color: #2c2a24;
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 0.85em;
+            color: var(--muted);
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 2px solid var(--border);
+            background: var(--input-bg);
+            color: #fff;
+            font-size: 0.95em;
+            transition: var(--transition);
             outline: none;
-            transition: all 0.2s;
         }
-        button {
-            background: #e7b42c;
-            color: #2c2a1f;
+        .input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(233, 68, 96, 0.15);
+        }
+        .auth-toggle {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 0.85em;
+        }
+        .auth-toggle span {
+            color: var(--accent);
             cursor: pointer;
-            font-weight: 800;
-            box-shadow: 0 4px 0 #8b5a2b;
+            font-weight: 600;
+            text-decoration: underline;
         }
-        button:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #8b5a2b;
+        .error-msg {
+            color: #ff6b6b;
+            font-size: 0.8em;
+            margin-top: 4px;
+            min-height: 18px;
         }
-        .tabs {
+
+        /* Main Layout */
+        #main-screen {
+            display: none;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .tab-nav {
             display: flex;
+            gap: 6px;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 28px;
-            justify-content: center;
+            margin-bottom: 20px;
+            background: var(--panel);
+            padding: 8px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
         }
         .tab-btn {
-            background: #47432e;
-            color: #ffefcf;
-            box-shadow: none;
+            padding: 10px 18px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: var(--muted);
+            font-weight: 600;
+            transition: var(--transition);
+            font-size: 0.85em;
+            white-space: nowrap;
         }
         .tab-btn.active {
-            background: #ffbc4a;
-            color: #2c2416;
-            box-shadow: 0 0 12px #ffb347;
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(233, 68, 96, 0.3);
         }
-        .content-pane {
+        .tab-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+        .tab-content {
             display: none;
-            background: #29241cd9;
-            border-radius: 1.8rem;
-            padding: 1.5rem;
-            backdrop-filter: blur(4px);
+            animation: fadeSlide 0.35s ease;
         }
-        .content-pane.active {
+        .tab-content.active {
             display: block;
         }
-        .cats-grid {
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards */
+        .cat-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 18px;
+            border: 2px solid var(--border);
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            min-width: 180px;
+        }
+        .cat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            border-color: var(--accent);
+        }
+        .cat-card .rarity-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        .rarity-common {
+            background: var(--common);
+        }
+        .rarity-uncommon {
+            background: var(--uncommon);
+        }
+        .rarity-rare {
+            background: var(--rare);
+            animation: shimmer 2s infinite;
+        }
+        .rarity-epic {
+            background: var(--epic);
+            animation: shimmer 1.5s infinite;
+        }
+        .rarity-legendary {
+            background: var(--legendary);
+            animation: shimmer 0.8s infinite;
+        }
+        @keyframes shimmer {
+            0%,
+            100% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 20px currentColor;
+            }
+        }
+        .cat-emoji {
+            font-size: 4em;
+            margin: 10px 0;
+            transition: var(--transition);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+        }
+        .cat-name {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin: 4px 0;
+        }
+        .cat-info {
+            font-size: 0.75em;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .cat-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 4px;
+            margin-top: 6px;
             justify-content: center;
-            margin-top: 20px;
         }
-        .cat-card {
-            background: #fef3d6;
-            color: #3b2a1f;
-            border-radius: 2rem;
-            width: 260px;
-            padding: 1rem;
-            transition: transform 0.1s ease;
+        .tag {
+            font-size: 0.65em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+        }
+        .tag-male {
+            background: #4a90d9;
+            color: #fff;
+        }
+        .tag-female {
+            background: #e87d9e;
+            color: #fff;
+        }
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        /* Breeding */
+        .breeding-slot {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 2px dashed var(--border);
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
             cursor: pointer;
-            box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+            transition: var(--transition);
+            flex-direction: column;
+            gap: 8px;
         }
-        .cat-card:hover { transform: scale(0.98); background: #ffefcb; }
+        .breeding-slot.filled {
+            border-style: solid;
+            border-color: var(--accent);
+            background: rgba(233, 68, 96, 0.08);
+        }
+        .breeding-slot:hover {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px rgba(240, 192, 64, 0.2);
+        }
+        .plus-icon {
+            font-size: 3em;
+            color: var(--muted);
+        }
+        .heart-icon {
+            font-size: 2em;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.25);
+            }
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .modal {
+            background: var(--panel);
+            border-radius: var(--radius);
+            padding: 28px;
+            max-width: 650px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5em;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: var(--transition);
+        }
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        /* Admin */
         .admin-section {
-            background: #332211aa;
-            border-left: 8px solid #ff7e5e;
-            padding: 1rem;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
         }
-        .stat-badge {
-            background: #dbb879;
-            border-radius: 40px;
-            padding: 4px 12px;
-            font-size: 0.8rem;
-            display: inline-block;
-            margin: 4px 4px 0 0;
+        .admin-section h3 {
+            margin-bottom: 12px;
+            color: var(--gold);
         }
-        .flex-between {
+        .stat-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85em;
         }
-        hr { border-color: #ffd58c; margin: 15px 0; }
-        .market-item {
-            background: #2e2a24;
-            border-radius: 1rem;
+        .gene-display {
+            font-family: 'Courier New', monospace;
+            background: #0a0a1a;
             padding: 10px;
-            margin: 8px;
-            display: inline-block;
-            width: 250px;
+            border-radius: 8px;
+            font-size: 0.78em;
+            word-break: break-all;
+            line-height: 1.6;
+            color: #b0ffb0;
+            margin: 8px 0;
         }
-        @media (max-width: 760px) {
-            .cats-grid { flex-direction: column; align-items: center; }
-        }
-        .toast-msg {
+        .notification {
             position: fixed;
-            bottom: 20px;
+            top: 20px;
             right: 20px;
-            background: #222;
-            color: gold;
-            padding: 12px 24px;
-            border-radius: 40px;
-            z-index: 999;
+            z-index: 300;
+            background: var(--card);
+            padding: 14px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+            max-width: 380px;
+            font-weight: 600;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .notification.success {
+            border-left: 4px solid var(--green);
+        }
+        .notification.error {
+            border-left: 4px solid #ff4444;
+        }
+        .notification.info {
+            border-left: 4px solid var(--blue);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #app-header {
+                padding: 10px 14px;
+                gap: 6px;
+            }
+            #app-header .logo {
+                font-size: 1.2em;
+            }
+            .tab-btn {
+                padding: 7px 11px;
+                font-size: 0.7em;
+            }
+            .grid-4 {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 10px;
+            }
+            .cat-emoji {
+                font-size: 2.8em;
+            }
+            .modal {
+                padding: 16px;
+                max-width: 95vw;
+            }
+        }
+        .highlight-gold {
+            color: var(--gold);
+            font-weight: 700;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .mt-2 {
+            margin-top: 8px;
+        }
+        .mt-3 {
+            margin-top: 14px;
+        }
+        .mb-3 {
+            margin-bottom: 14px;
+        }
+        .gap-2 {
+            gap: 8px;
+        }
+        .flex-wrap {
+            display: flex;
+            flex-wrap: wrap;
         }
     </style>
 </head>
 <body>
-<div class="app-container" id="appRoot">
-    <div id="authContainer"></div>
-    <div id="gameContainer" style="display:none;">
-        <div class="flex-between">
-            <h1>🐾 CatGenetics 🧬</h1>
-            <div><span id="userBalance">💰 0</span> 🪙 &nbsp; <span id="userName"></span> <button id="logoutBtn">🚪 Выйти</button></div>
+
+    <!-- Auth Screen -->
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h2>🐱 Cat Genetics Empire</h2>
+            <p>Разведение, генетика, сетевые коты</p>
+            <div id="auth-form">
+                <div class="input-group"><label>Email</label><input type="email" id="auth-email" placeholder="you@email.com"></div>
+                <div class="input-group"><label>Пароль</label><input type="password" id="auth-pass" placeholder="Минимум 6 символов"></div>
+                <div class="input-group" id="name-group" style="display:none;"><label>Никнейм</label><input type="text" id="auth-name" placeholder="Ваш ник"></div>
+                <div class="error-msg" id="auth-error"></div>
+                <button class="btn btn-accent" style="width:100%;justify-content:center;" id="auth-submit-btn">Войти</button>
+                <div class="auth-toggle" id="auth-toggle-text">Нет аккаунта? <span id="toggle-auth-mode">Зарегистрироваться</span></div>
+            </div>
+            <div id="auth-loading" style="display:none;">⏳ Загрузка...</div>
         </div>
-        <div class="tabs" id="tabsMenu">
-            <button class="tab-btn active" data-tab="mycats">🐱 Мои коты</button>
-            <button class="tab-btn" data-tab="breed">🧬 Разведение</button>
-            <button class="tab-btn" data-tab="market">🏪 Рынок & Обмен</button>
-            <button class="tab-btn" data-tab="care">❤️ Уход & Задания</button>
-            <button class="tab-btn" data-tab="shop">🛒 Магазин</button>
-            <button class="tab-btn admin-tab" data-tab="admin" style="display:none;">👑 Админ панель</button>
-        </div>
-        <div id="mycats" class="content-pane active">🐈 Ваши питомцы появляются здесь...</div>
-        <div id="breed" class="content-pane">🧬 Выберите родителей для вязки</div>
-        <div id="market" class="content-pane">🏪 Торговая площадка</div>
-        <div id="care" class="content-pane">❤️ Кормите, играйте, повышайте здоровье и счастье</div>
-        <div id="shop" class="content-pane">🛒 Магазин: котята и предметы</div>
-        <div id="admin" class="content-pane admin-section">🔧 Администраторские инструменты</div>
     </div>
-</div>
-<script>
-    // ---------- FIREBASE INIT ----------
-    const firebaseConfig = {
-        apiKey: "AIzaSyC0b58JT-x3te0LZmWQv5qA2mzG026ycK8",
-        authDomain: "cat-games-v1.firebaseapp.com",
-        projectId: "cat-games-v1",
-        storageBucket: "cat-games-v1.firebasestorage.app",
-        messagingSenderId: "357590792729",
-        appId: "1:357590792729:web:7c40d851c8f09d5b388888",
-        measurementId: "G-QMY9FRLTJL"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
 
-    // ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------
-    let currentUser = null;
-    let userDocRef = null;
-    let catsListener = null;
-    let marketListener = null;
-    let allCats = [];
+    <!-- Main App -->
+    <div id="main-screen">
+        <header id="app-header">
+            <span class="logo" id="header-logo">🐱 Cat Genetics Empire</span>
+            <div id="user-info">
+                <span class="currency">🪙 <span id="coins-display">0</span></span>
+                <span class="currency">💎 <span id="gems-display">0</span></span>
+                <span style="color:var(--muted);font-size:0.85em;" id="username-display">Игрок</span>
+                <button class="btn btn-outline btn-sm" id="btn-logout">Выйти</button>
+            </div>
+        </header>
 
-    // ---------- ГЕНЕТИЧЕСКАЯ МОДЕЛЬ (расширенная) ----------
-    // Гены: базовый цвет (B/b), дилюция (D/d), оранжевый (O/o), табби (T/t), белые пятна (W/w), цвет глаз (G/g)
-    // Создание случайного генотипа с весами редкости
-    function randomGene(dominantProb = 0.6) {
-        return Math.random() < dominantProb ? 'dominant' : 'recessive';
-    }
-    function generateRandomGenes() {
-        return {
-            baseColor: randomGene(0.65) === 'dominant' ? 'B' : 'b',   // B = черный, b = шоколадный
-            dilution: randomGene(0.4) === 'dominant' ? 'D' : 'd',     // D = плотный, d = дилюция
-            orange: randomGene(0.35) === 'dominant' ? 'O' : 'o',       // O = рыжий фактор
-            tabby: randomGene(0.7) === 'dominant' ? 'T' : 't',         // T = полосатый узор
-            whiteSpotting: randomGene(0.25) === 'dominant' ? 'W' : 'w', // W = белые пятна
-            eyeColor: randomGene(0.5) === 'dominant' ? 'G' : 'g'        // G = зеленые, g = голубые
-        };
-    }
-    // фенотип на основе генотипа
-    function computePhenotype(genes) {
-        let color = "";
-        if (genes.orange === 'O') color = "Рыжий/Кремовый";
-        else color = (genes.baseColor === 'B' ? "Черный" : "Шоколадный");
-        if (genes.dilution === 'd') color = (color === "Черный" ? "Голубой" : (color === "Шоколадный" ? "Лиловый" : (color === "Рыжий/Кремовый" ? "Кремовый" : color)));
-        let pattern = genes.tabby === 'T' ? "Полосатый (табби)" : "Сплошной";
-        let white = genes.whiteSpotting === 'W' ? " + белые отметины" : "";
-        let eyes = genes.eyeColor === 'G' ? "Зеленые глаза" : "Голубые глаза";
-        return `${color} ${pattern}${white}, ${eyes}`;
-    }
-    // наследование: потомок получает по одному аллелю от каждого родителя (упрощённо, но реалистично)
-    function inheritGenes(parentGenesA, parentGenesB) {
-        const getAllele = (geneObj, geneKey) => {
-            let val = geneObj[geneKey];
-            return val === 'B' || val === 'b' ? val : (val === 'D' || val === 'd' ? val : (val === 'O' || val === 'o' ? val : (val === 'T' || val === 't' ? val : (val === 'W' || val === 'w' ? val : (val === 'G' || val === 'g' ? val : 'B')))));
-        };
-        const combine = (g1, g2) => {
-            let alleles = [g1, g2];
-            let dominantOrder = { 'B':1,'b':2,'D':1,'d':2,'O':1,'o':2,'T':1,'t':2,'W':1,'w':2,'G':1,'g':2 };
-            let pick = alleles.sort((a,b)=>dominantOrder[a]-dominantOrder[b])[0];
-            return pick;
-        };
-        let newGenes = {};
-        for(let key of ['baseColor','dilution','orange','tabby','whiteSpotting','eyeColor']) {
-            let a = getAllele(parentGenesA, key);
-            let b = getAllele(parentGenesB, key);
-            newGenes[key] = combine(a,b);
-        }
-        return newGenes;
-    }
+        <!-- Tab Navigation -->
+        <nav class="tab-nav" id="tab-nav">
+            <button class="tab-btn active" data-tab="my-cats">🏠 Мои коты</button>
+            <button class="tab-btn" data-tab="breeding">💕 Разведение</button>
+            <button class="tab-btn" data-tab="market">🏪 Рынок</button>
+            <button class="tab-btn" data-tab="leaderboard">🏆 Рейтинг</button>
+            <button class="tab-btn" data-tab="achievements">🎯 Достижения</button>
+            <button class="tab-btn" data-tab="admin" id="admin-tab-btn" style="display:none;">⚙️ Админ</button>
+        </nav>
 
-    // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------
-    function showToast(msg, isErr=false) {
-        let toast = document.createElement('div');
-        toast.className = 'toast-msg';
-        toast.innerText = msg;
-        toast.style.backgroundColor = isErr ? '#7a2e2e' : '#2c5f2d';
-        document.body.appendChild(toast);
-        setTimeout(()=>toast.remove(), 3000);
-    }
+        <!-- Tab: My Cats -->
+        <div class="tab-content active" id="tab-my-cats">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+                <h2>🐈 Мои коты (<span id="cat-count">0</span>)</h2>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn btn-accent btn-sm" id="btn-random-cat">🎲 Случайный кот (50🪙)</button>
+                    <button class="btn btn-green btn-sm" id="btn-daily-reward">🎁 Ежедневная награда</button>
+                </div>
+            </div>
+            <div class="grid-4" id="my-cats-grid">
+                <p style="color:var(--muted);grid-column:1/-1;text-align:center;padding:40px;">У вас пока нет котов. Нажмите "Случайный кот" чтобы начать!</p>
+            </div>
+        </div>
 
-    async function updateUserBalanceUI() {
-        if(currentUser && userDocRef) {
-            let doc = await userDocRef.get();
-            if(doc.exists) document.getElementById('userBalance').innerHTML = `💰 ${doc.data().balance || 100}`;
-        }
-    }
+        <!-- Tab: Breeding -->
+        <div class="tab-content" id="tab-breeding">
+            <h2>💕 Разведение котов</h2>
+            <p style="color:var(--muted);margin-bottom:14px;">Выберите двух котов для скрещивания. Учитываются реальные генетические законы!</p>
+            <div class="grid-2">
+                <div class="breeding-slot" id="breed-slot-1" onclick="window._game&&window._game.selectBreedSlot(1)">
+                    <span class="plus-icon">➕</span><span>Выбрать кота-отца</span>
+                </div>
+                <div class="breeding-slot" id="breed-slot-2" onclick="window._game&&window._game.selectBreedSlot(2)">
+                    <span class="plus-icon">➕</span><span>Выбрать кошку-мать</span>
+                </div>
+            </div>
+            <div style="text-align:center;margin:16px 0;">
+                <button class="btn btn-accent" id="btn-breed" disabled style="font-size:1.1em;padding:12px 30px;">💕 Скрестить (100🪙)</button>
+                <p style="color:var(--muted);font-size:0.75em;margin-top:6px;" id="breed-info"></p>
+            </div>
+            <div id="breed-result" style="text-align:center;margin-top:16px;"></div>
+            <div class="gene-display" id="breeding-genes-preview" style="display:none;"></div>
+        </div>
 
-    // создание кота
-    async function createCat(ownerId, name, gender, parents = null, customGenes = null) {
-        let genes = customGenes ? customGenes : generateRandomGenes();
-        let phenotype = computePhenotype(genes);
-        let catData = {
-            ownerId, name, gender, ageMonths: 2, health: 85, happiness: 80, generation: parents ? 2 : 1,
-            genes, phenotype, isPregnant: false, pregnantWith: null, pregnancyProgress: 0,
-            lastCare: Date.now(), rarityScore: Math.floor(Math.random()*50)+50,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        let ref = await db.collection('cats').add(catData);
-        showToast(`🐈 Кот ${name} (${phenotype}) появился!`);
-        return ref.id;
-    }
+        <!-- Tab: Market -->
+        <div class="tab-content" id="tab-market">
+            <h2>🏪 Рынок котов</h2>
+            <p style="color:var(--muted);margin-bottom:12px;">Покупайте и продавайте котов между игроками. Комиссия рынка: 5%.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                <button class="btn btn-blue btn-sm" id="btn-refresh-market">🔄 Обновить</button>
+                <button class="btn btn-accent btn-sm" id="btn-sell-cat">💸 Выставить на продажу</button>
+            </div>
+            <div class="grid-3" id="market-grid">
+                <p style="color:var(--muted);grid-column:1/-1;text-align:center;padding:30px;">Загрузка рынка...</p>
+            </div>
+        </div>
 
-    // вязка (свои коты)
-    async function breedCats(motherId, fatherId, userId) {
-        let motherSnap = await db.collection('cats').doc(motherId).get();
-        let fatherSnap = await db.collection('cats').doc(fatherId).get();
-        if(!motherSnap.exists || !fatherSnap.exists) throw new Error("Кот не найден");
-        let mother = motherSnap.data(), father = fatherSnap.data();
-        if(mother.ownerId !== userId || father.ownerId !== userId) throw new Error("Владелец не совпадает");
-        if(mother.gender !== 'female' || father.gender !== 'male') throw new Error("Пол родителей не подходит");
-        if(mother.ageMonths < 6 || father.ageMonths < 6) throw new Error("Возраст менее 6 месяцев");
-        if(mother.health < 60 || father.health<60) throw new Error("Здоровье низкое");
-        let kittenGenes = inheritGenes(mother.genes, father.genes);
-        let name = `Котенок ${Math.floor(Math.random()*1000)}`;
-        await createCat(userId, name, Math.random()<0.5?'female':'male', [motherId, fatherId], kittenGenes);
-        showToast("✨ Вязка успешна! Родился новый котёнок!");
-    }
+        <!-- Tab: Leaderboard -->
+        <div class="tab-content" id="tab-leaderboard">
+            <h2>🏆 Таблица лидеров</h2>
+            <div style="background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);">
+                <div id="leaderboard-list" style="max-height:500px;overflow-y:auto;">
+                    <p style="color:var(--muted);">Загрузка...</p>
+                </div>
+            </div>
+        </div>
 
-    // ежедневный уход (увеличивает здоровье/счастье)
-    async function careCat(catId, action) {
-        let ref = db.collection('cats').doc(catId);
-        let doc = await ref.get();
-        if(!doc.exists) return;
-        let data = doc.data();
-        let newHealth = data.health + (action==='feed'? 8 : action==='play'? 5 : 3);
-        let newHappiness = data.happiness + (action==='play'? 12 : action==='clean'? 6 : 4);
-        await ref.update({ health: Math.min(100,newHealth), happiness: Math.min(100,newHappiness), lastCare: Date.now() });
-        showToast(`❤️ + уход! Здоровье ${data.health}→${Math.min(100,newHealth)}`);
-    }
+        <!-- Tab: Achievements -->
+        <div class="tab-content" id="tab-achievements">
+            <h2>🎯 Достижения</h2>
+            <div class="grid-2" id="achievements-grid"></div>
+        </div>
 
-    // ---------- UI ОТРИСОВКА ----------
-    async function renderMyCats() {
-        let container = document.getElementById('mycats');
-        if(!currentUser) return;
-        let snapshot = await db.collection('cats').where('ownerId','==',currentUser.uid).get();
-        allCats = snapshot.docs.map(d=>{return {id:d.id, ...d.data()};});
-        if(allCats.length===0) { container.innerHTML = '<p>У вас нет котов. Купите в магазине или получите первого бесплатно! <button id="getStarterCat">🎁 Взять стартового кота</button></p>';
-            document.getElementById('getStarterCat')?.addEventListener('click',()=> createCat(currentUser.uid, 'Пушистик', Math.random()<0.5?'male':'female'));
-            return;
-        }
-        let html = `<div class="cats-grid">`;
-        for(let cat of allCats) {
-            html += `<div class="cat-card" data-id="${cat.id}">
-                        <h3>🐾 ${cat.name}</h3>
-                        <p>🧬 ${cat.phenotype}</p>
-                        <p>⚤ ${cat.gender==='male'?'♂ Кот':'♀ Кошка'} | Возраст: ${cat.ageMonths} мес</p>
-                        <p>❤️ Здоровье ${cat.health} | 😊 Счастье ${cat.happiness}</p>
-                        <div><button class="feedBtn" data-id="${cat.id}">🍖 Кормить</button>
-                        <button class="playBtn" data-id="${cat.id}">🎾 Играть</button></div>
-                        <button class="sellBtn" data-id="${cat.id}" data-name="${cat.name}">💲 Выставить на рынок</button>
-                    </div>`;
-        }
-        html += `</div>`;
-        container.innerHTML = html;
-        document.querySelectorAll('.feedBtn').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation(); careCat(btn.dataset.id,'feed');}));
-        document.querySelectorAll('.playBtn').forEach(btn=>btn.addEventListener('click',(e)=>{e.stopPropagation(); careCat(btn.dataset.id,'play');}));
-        document.querySelectorAll('.sellBtn').forEach(btn=>btn.addEventListener('click',async(e)=>{
-            let price = prompt("Цена продажи (монеты):", "200");
-            if(price && !isNaN(price)) {
-                await db.collection('market').add({ catId: btn.dataset.id, sellerId: currentUser.uid, price: parseInt(price), catName: btn.dataset.name, timestamp: Date.now() });
-                showToast(`Кот выставлен за ${price} монет`);
-                renderMarket();
+        <!-- Tab: Admin -->
+        <div class="tab-content" id="tab-admin">
+            <h2>⚙️ Админ-панель</h2>
+            <div class="admin-section">
+                <h3>📊 Статистика сервера</h3>
+                <div id="admin-stats"><p style="color:var(--muted);">Загрузка...</p></div>
+            </div>
+            <div class="admin-section">
+                <h3>🎁 Выдать ресурсы игроку</h3>
+                <div class="input-group"><label>Email игрока</label><input type="text" id="admin-target-email" placeholder="player@email.com"></div>
+                <div class="input-group"><label>Монеты</label><input type="number" id="admin-coins" value="100" min="0"></div>
+                <div class="input-group"><label>Самоцветы</label><input type="number" id="admin-gems" value="10" min="0"></div>
+                <button class="btn btn-green" id="btn-admin-give">Выдать ресурсы</button>
+                <p class="error-msg" id="admin-msg"></p>
+            </div>
+            <div class="admin-section">
+                <h3>🐱 Создать особого кота</h3>
+                <div class="input-group"><label>Email игрока</label><input type="text" id="admin-cat-email" placeholder="player@email.com"></div>
+                <div class="input-group"><label>Редкость</label><select id="admin-cat-rarity" style="width:100%;padding:10px;border-radius:8px;background:var(--input-bg);color:#fff;border:1px solid var(--border);">
+                        <option value="common">Обычный</option><option value="uncommon">Необычный</option><option value="rare">Редкий</option><option value="epic">Эпический</option><option value="legendary">Легендарный</option>
+                </select></div>
+                <button class="btn btn-purple" id="btn-admin-create-cat">Создать кота</button>
+            </div>
+            <div class="admin-section">
+                <h3>🛠️ Системные действия</h3>
+                <button class="btn btn-outline btn-sm" id="btn-admin-reset-market">Очистить рынок</button>
+                <button class="btn btn-outline btn-sm" id="btn-admin-recalc">Пересчитать рейтинги</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal-overlay" style="display:none;">
+        <div class="modal" id="modal-content"></div>
+    </div>
+
+    <!-- Notification container -->
+    <div id="notification-container"></div>
+
+    <script>
+        (function() {
+            // ============ FIREBASE CONFIG ============
+            const firebaseConfig = {
+                apiKey: "AIzaSyC0b58JT-x3te0LZmWQv5qA2mzG026ycK8",
+                authDomain: "cat-games-v1.firebaseapp.com",
+                projectId: "cat-games-v1",
+                storageBucket: "cat-games-v1.firebasestorage.app",
+                messagingSenderId: "357590792729",
+                appId: "1:357590792729:web:7c40d851c8f09d5b388888",
+                measurementId: "G-QMY9FRLTJL"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            db.settings({ merge: true, cacheSizeBytes: 50 * 1024 * 1024 });
+
+            // ============ GENETICS ENGINE ============
+            class GeneticsEngine {
+                constructor() {
+                    // Генетические локусы с аллелями
+                    this.loci = {
+                        B: { name: 'Базовый цвет', alleles: ['B', 'b', 'b1'], dominance: [0, 1, 2] },
+                        O: { name: 'Оранжевый (сцеплен с X)', alleles: ['O', 'o'], dominance: [0, 1], sexLinked: true },
+                        D: { name: 'Разбавитель', alleles: ['D', 'd'], dominance: [0, 1] },
+                        A: { name: 'Агути (табби)', alleles: ['A', 'a'], dominance: [0, 1] },
+                        T: { name: 'Тип табби', alleles: ['Ta', 'T', 'tb'], dominance: [0, 1, 2] },
+                        S: { name: 'Белые пятна', alleles: ['S', 's'], dominance: [0, 1], incompleteDominance: true },
+                        W: { name: 'Доминантный белый', alleles: ['W', 'w'], dominance: [0, 1], epistatic: true },
+                        L: { name: 'Длина шерсти', alleles: ['L', 'l'], dominance: [0, 1] },
+                        E: { name: 'Форма ушей', alleles: ['E', 'e', 'ec'], dominance: [0, 1, 2] },
+                        TL: { name: 'Длина хвоста', alleles: ['TL', 'tl', 'tb'], dominance: [0, 1, 2] },
+                        EY: { name: 'Цвет глаз', alleles: ['EYc', 'EYb', 'EYg', 'EYy'], dominance: [0, 1, 2, 3],
+                            multiAllele: true },
+                        SZ: { name: 'Размер', alleles: ['SZn', 'SZm', 'SZl'], dominance: [0, 1, 2] },
+                        PT: { name: 'Характер', alleles: ['PTa', 'PTc', 'PTp', 'PTs'], dominance: [0, 1, 2, 3],
+                            multiAllele: true },
+                    };
+                    this.mutationRate = 0.03;
+                }
+
+                getRandomAllele(locusKey) {
+                    const locus = this.loci[locusKey];
+                    const idx = Math.floor(Math.random() * locus.alleles.length);
+                    return locus.alleles[idx];
+                }
+
+                getRandomGenotype() {
+                    const gt = {};
+                    for (const [key, locus] of Object.entries(this.loci)) {
+                        if (locus.sexLinked) {
+                            gt[key] = [this.getRandomAllele(key), this.getRandomAllele(key)];
+                        } else {
+                            gt[key] = [this.getRandomAllele(key), this.getRandomAllele(key)];
+                        }
+                    }
+                    return gt;
+                }
+
+                getDominanceIndex(locusKey, allele) {
+                    const locus = this.loci[locusKey];
+                    return locus.dominance[locus.alleles.indexOf(allele)] ?? 99;
+                }
+
+                getDominantAllele(locusKey, alleles) {
+                    const a1 = alleles[0];
+                    const a2 = alleles[1];
+                    const d1 = this.getDominanceIndex(locusKey, a1);
+                    const d2 = this.getDominanceIndex(locusKey, a2);
+                    if (d1 < d2) return a1;
+                    if (d2 < d1) return a2;
+                    return a1; // codominant
+                }
+
+                breed(parent1Genotype, parent2Genotype, parent1Sex, parent2Sex) {
+                    const childGenotype = {};
+                    for (const [key, locus] of Object.entries(this.loci)) {
+                        const p1alleles = parent1Genotype[key] || [locus.alleles[0], locus.alleles[0]];
+                        const p2alleles = parent2Genotype[key] || [locus.alleles[0], locus.alleles[0]];
+
+                        let a1, a2;
+                        if (locus.sexLinked) {
+                            // X-linked: child gets one X from mother, one from father (if male child gets Y from father)
+                            const childIsMale = Math.random() < 0.5;
+                            if (childIsMale) {
+                                a1 = p2alleles[Math.random() < 0.5 ? 0 : 1]; // from mother (X)
+                                a2 = 'Y'; // from father
+                            } else {
+                                a1 = p1alleles[Math.random() < 0.5 ? 0 : 1]; // from father (X)
+                                a2 = p2alleles[Math.random() < 0.5 ? 0 : 1]; // from mother (X)
+                            }
+                        } else {
+                            a1 = p1alleles[Math.random() < 0.5 ? 0 : 1];
+                            a2 = p2alleles[Math.random() < 0.5 ? 0 : 1];
+                        }
+
+                        // Mutation check
+                        if (Math.random() < this.mutationRate) {
+                            const allAlleles = locus.alleles.filter(a => a !== 'Y');
+                            a1 = allAlleles[Math.floor(Math.random() * allAlleles.length)];
+                        }
+                        if (Math.random() < this.mutationRate && !locus.sexLinked) {
+                            const allAlleles = locus.alleles.filter(a => a !== 'Y');
+                            a2 = allAlleles[Math.floor(Math.random() * allAlleles.length)];
+                        }
+
+                        childGenotype[key] = [a1, a2];
+                    }
+                    return childGenotype;
+                }
+
+                determineSex() {
+                    return Math.random() < 0.5 ? 'male' : 'female';
+                }
+
+                calculateRarity(genotype) {
+                    let score = 0;
+                    const allAlleles = [];
+                    for (const [key, gt] of Object.entries(genotype)) {
+                        allAlleles.push(...gt.filter(a => a !== 'Y'));
+                    }
+                    const uniqueAlleles = new Set(allAlleles);
+                    const recessiveCount = allAlleles.filter(a => {
+                        for (const [key, locus] of Object.entries(this.loci)) {
+                            const idx = locus.alleles.indexOf(a);
+                            if (idx >= 0 && locus.dominance[idx] >= 2) return true;
+                        }
+                        return false;
+                    }).length;
+
+                    score += uniqueAlleles.size * 3;
+                    score += recessiveCount * 5;
+                    if (genotype['W'] && genotype['W'].includes('W')) score += 10;
+                    if (genotype['S'] && genotype['S'].includes('S') && genotype['S'].filter(s => s === 'S').length ===
+                        2) score += 8;
+                    if (genotype['O'] && genotype['O'].includes('O') && !genotype['O'].includes('o')) score += 7;
+                    if (genotype['EY'] && new Set(genotype['EY']).size > 1) score += 6;
+
+                    if (score >= 55) return 'legendary';
+                    if (score >= 40) return 'epic';
+                    if (score >= 25) return 'rare';
+                    if (score >= 12) return 'uncommon';
+                    return 'common';
+                }
+
+                getPhenotypeDescription(genotype, sex) {
+                    const desc = {};
+                    const Bdominant = this.getDominantAllele('B', genotype['B'] || ['B', 'B']);
+                    const OdAlleles = genotype['O'] || ['o', 'o'];
+                    const hasOrange = OdAlleles.includes('O');
+                    const Ddominant = this.getDominantAllele('D', genotype['D'] || ['D', 'D']);
+                    const Adominant = this.getDominantAllele('A', genotype['A'] || ['A', 'A']);
+                    const Tdominant = this.getDominantAllele('T', genotype['T'] || ['T', 'T']);
+                    const Salleles = genotype['S'] || ['s', 's'];
+                    const hasWhiteSpotting = Salleles.includes('S');
+                    const whiteSpotCount = Salleles.filter(s => s === 'S').length;
+                    const Wdominant = this.getDominantAllele('W', genotype['W'] || ['w', 'w']);
+                    const Ldominant = this.getDominantAllele('L', genotype['L'] || ['L', 'L']);
+                    const Edominant = this.getDominantAllele('E', genotype['E'] || ['E', 'E']);
+                    const TLdominant = this.getDominantAllele('TL', genotype['TL'] || ['TL', 'TL']);
+                    const EYdominant = this.getDominantAllele('EY', genotype['EY'] || ['EYc', 'EYc']);
+                    const SZdominant = this.getDominantAllele('SZ', genotype['SZ'] || ['SZn', 'SZn']);
+                    const PTdominant = this.getDominantAllele('PT', genotype['PT'] || ['PTa', 'PTa']);
+
+                    if (Wdominant === 'W') {
+                        desc.baseColor = 'Белый (доминантный)';
+                        desc.pattern = 'Сплошной белый';
+                    } else {
+                        const colorMap = {
+                            'B': { D: 'Чёрный', d: 'Голубой (серый)' },
+                            'b': { D: 'Шоколадный', d: 'Лиловый' },
+                            'b1': { D: 'Циннамон', d: 'Фавн' },
+                        };
+                        const orangeMap = { 'D': 'Рыжий', 'd': 'Кремовый' };
+                        let baseColor;
+                        if (hasOrange && sex === 'male') {
+                            baseColor = orangeMap[Ddominant] || 'Рыжий';
+                        } else if (hasOrange && sex === 'female' && OdAlleles.filter(o => o === 'O').length === 2) {
+                            baseColor = orangeMap[Ddominant] || 'Рыжий';
+                        } else if (hasOrange && sex === 'female') {
+                            baseColor = 'Черепаховый';
+                        } else {
+                            baseColor = (colorMap[Bdominant] || { D: 'Чёрный', d: 'Серый' })[Ddominant] || 'Чёрный';
+                        }
+                        desc.baseColor = baseColor;
+                        if (Adominant === 'A') {
+                            const tabbyMap = { 'Ta': 'Тикированный табби', 'T': 'Макрель табби', 'tb': 'Классический табби' };
+                            desc.pattern = tabbyMap[Tdominant] || 'Табби';
+                        } else {
+                            desc.pattern = 'Сплошной';
+                        }
+                        if (hasWhiteSpotting) {
+                            const spotMap = { 2: 'Биколор (много белого)', 1: 'С белыми отметинами' };
+                            desc.pattern += ' + ' + (spotMap[whiteSpotCount] || 'Белые пятна');
+                        }
+                    }
+                    desc.furLength = Ldominant === 'L' ? 'Короткошёрстный' : 'Длинношёрстный';
+                    const earMap = { 'E': 'Обычные уши', 'e': 'Вислоухий', 'ec': 'Завитые уши' };
+                    desc.ears = earMap[Edominant] || 'Обычные уши';
+                    const tailMap = { 'TL': 'Обычный хвост', 'tl': 'Бобтейл', 'tb': 'Бесхвостый' };
+                    desc.tail = tailMap[TLdominant] || 'Обычный хвост';
+                    const eyeMap = { 'EYc': 'Медные глаза', 'EYb': 'Голубые глаза', 'EYg': 'Зелёные глаза',
+                        'EYy': 'Жёлтые глаза' };
+                    desc.eyes = eyeMap[EYdominant] || 'Медные глаза';
+                    const sizeMap = { 'SZn': 'Обычный размер', 'SZm': 'Миниатюрный', 'SZl': 'Крупный' };
+                    desc.size = sizeMap[SZdominant] || 'Обычный размер';
+                    const personalityMap = { 'PTa': 'Активный', 'PTc': 'Спокойный', 'PTp': 'Игривый', 'PTs': 'Застенчивый' };
+                    desc.personality = personalityMap[PTdominant] || 'Активный';
+
+                    return desc;
+                }
+
+                getCatEmoji(genotype, sex) {
+                    const desc = this.getPhenotypeDescription(genotype, sex);
+                    const color = desc.baseColor.toLowerCase();
+                    if (color.includes('белый') && !color.includes('пятн')) return '🐈';
+                    if (color.includes('чёрн')) return '🐈‍⬛';
+                    if (color.includes('рыж') || color.includes('крем')) return '🐈';
+                    if (color.includes('череп')) return '🐈';
+                    if (color.includes('шокол') || color.includes('лилов')) return '🐈';
+                    if (color.includes('голуб') || color.includes('сер')) return '🐈‍⬛';
+                    return '🐈';
+                }
+
+                getGeneString(genotype) {
+                    const parts = [];
+                    for (const [key, alleles] of Object.entries(genotype)) {
+                        parts.push(`${key}:${alleles.join('/')}`);
+                    }
+                    return parts.join(' | ');
+                }
             }
-        }));
-    }
 
-    async function renderBreed() {
-        let container = document.getElementById('breed');
-        if(!currentUser) return;
-        let catsSnap = await db.collection('cats').where('ownerId','==',currentUser.uid).get();
-        let userCats = catsSnap.docs.map(d=>{return {id:d.id, ...d.data()};});
-        let males = userCats.filter(c=>c.gender==='male');
-        let females = userCats.filter(c=>c.gender==='female');
-        if(males.length===0 || females.length===0) { container.innerHTML = '<p>❌ Нужны хотя бы один кот и одна кошка для разведения.</p>'; return; }
-        let html = `<h3>🧬 Разведение котов</h3><div><label>Мать (кошка):</label><select id="motherSelect">${females.map(f=>`<option value="${f.id}">${f.name} (❤️${f.health})</option>`).join('')}</select></div>
-        <div><label>Отец (кот):</label><select id="fatherSelect">${males.map(m=>`<option value="${m.id}">${m.name} (❤️${m.health})</option>`).join('')}</select></div>
-        <button id="startBreed">💞 Провести вязку</button><div id="breedResult"></div>`;
-        container.innerHTML = html;
-        document.getElementById('startBreed').onclick = async () => {
-            let motherId = document.getElementById('motherSelect').value;
-            let fatherId = document.getElementById('fatherSelect').value;
-            try { await breedCats(motherId, fatherId, currentUser.uid); renderMyCats(); renderBreed(); } catch(e) { showToast(e.message, true); }
-        };
-    }
+            // ============ CAT CLASS ============
+            class Cat {
+                constructor(data) {
+                    this.id = data.id || this.generateId();
+                    this.name = data.name || 'Безымянный';
+                    this.genotype = data.genotype || {};
+                    this.sex = data.sex || 'male';
+                    this.rarity = data.rarity || 'common';
+                    this.phenotype = data.phenotype || {};
+                    this.generation = data.generation || 1;
+                    this.parents = data.parents || [];
+                    this.birthDate = data.birthDate || Date.now();
+                    this.breedCount = data.breedCount || 0;
+                    this.maxBreedCount = data.maxBreedCount || 7;
+                    this.inbred = data.inbred || false;
+                    this.emoji = data.emoji || '🐈';
+                    this.ownerId = data.ownerId || null;
+                    this.forSale = data.forSale || false;
+                    this.salePrice = data.salePrice || 0;
+                    this.saleCurrency = data.saleCurrency || 'coins';
+                }
 
-    async function renderMarket() {
-        let container = document.getElementById('market');
-        let marketSnap = await db.collection('market').get();
-        let listings = marketSnap.docs.map(d=>{return {id:d.id, ...d.data()};});
-        if(listings.length===0) { container.innerHTML = '<p>🏷️ Нет активных объявлений. Выставьте своего кота!</p>'; return; }
-        let html = `<div class="cats-grid">`;
-        for(let item of listings) {
-            let catSnap = await db.collection('cats').doc(item.catId).get();
-            if(!catSnap.exists) continue;
-            let cat = catSnap.data();
-            html += `<div class="market-item"><b>🐱 ${cat.name}</b> | ${cat.phenotype}<br>💰 Цена: ${item.price} 🪙<br>👤 Продавец: ${item.sellerId.slice(0,6)}<br><button class="buyBtn" data-id="${item.id}" data-cat="${item.catId}" data-price="${item.price}">Купить</button></div>`;
-        }
-        html += `</div>`;
-        container.innerHTML = html;
-        document.querySelectorAll('.buyBtn').forEach(btn=>btn.addEventListener('click', async (e)=>{
-            let listingId = btn.dataset.id, catIdRef = btn.dataset.cat, price = parseInt(btn.dataset.price);
-            let userDoc = await db.collection('users').doc(currentUser.uid).get();
-            let balance = userDoc.data().balance;
-            if(balance < price) { showToast("Недостаточно монет!", true); return; }
-            await db.runTransaction(async (transaction)=>{
-                let catRef = db.collection('cats').doc(catIdRef);
-                let catDoc = await transaction.get(catRef);
-                if(catDoc.data().ownerId === currentUser.uid) throw new Error("Нельзя купить своего кота");
-                transaction.update(catRef, { ownerId: currentUser.uid });
-                transaction.update(db.collection('users').doc(currentUser.uid), { balance: balance - price });
-                let sellerRef = db.collection('users').doc(catDoc.data().ownerId);
-                let sellerDoc = await transaction.get(sellerRef);
-                transaction.update(sellerRef, { balance: (sellerDoc.data().balance||0) + price });
-                transaction.delete(db.collection('market').doc(listingId));
-            });
-            showToast("Покупка успешна!");
-            renderMarket(); renderMyCats(); updateUserBalanceUI();
-        }));
-    }
+                generateId() {
+                    return 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
 
-    async function renderCare() {
-        let container = document.getElementById('care');
-        let catsSnap = await db.collection('cats').where('ownerId','==',currentUser.uid).get();
-        let cats = catsSnap.docs.map(d=>{return {id:d.id, ...d.data()};});
-        if(cats.length===0) { container.innerHTML = '<p>Нет котов для ухода.</p>'; return; }
-        let html = `<h3>🐾 Уход за питомцами</h3><div class="cats-grid">`;
-        for(let cat of cats) {
-            html += `<div class="cat-card"><b>${cat.name}</b><br>❤️ Здоровье ${cat.health} | 😊 Счастье ${cat.happiness}<br>
-            <button class="careFeed" data-id="${cat.id}">🍖 Корм (+8 здоровье)</button>
-            <button class="carePlay" data-id="${cat.id}">🎾 Игра (+12 счастье)</button>
-            <button class="careClean" data-id="${cat.id}">🧼 Чистка (+6 обоим)</button></div>`;
-        }
-        html += `</div><div><h3>Ежедневный бонус 🎁</h3><button id="dailyBonus">Получить 150 монет + лакомство</button></div>`;
-        container.innerHTML = html;
-        document.querySelectorAll('.careFeed').forEach(b=>b.addEventListener('click',()=>careCat(b.dataset.id,'feed')));
-        document.querySelectorAll('.carePlay').forEach(b=>b.addEventListener('click',()=>careCat(b.dataset.id,'play')));
-        document.querySelectorAll('.careClean').forEach(b=>b.addEventListener('click',()=>careCat(b.dataset.id,'clean')));
-        document.getElementById('dailyBonus')?.addEventListener('click', async ()=>{
-            let userData = await userDocRef.get();
-            let lastBonus = userData.data().lastBonus || 0;
-            if(Date.now()-lastBonus < 86400000) { showToast("Бонус уже получен сегодня!", true); return; }
-            await userDocRef.update({ balance: (userData.data().balance || 100) + 150, lastBonus: Date.now() });
-            updateUserBalanceUI();
-            showToast("🎉 +150 монет! Заботьтесь о котах!");
-        });
-    }
+                toFirestore() {
+                    return {
+                        id: this.id,
+                        name: this.name,
+                        genotype: this.genotype,
+                        sex: this.sex,
+                        rarity: this.rarity,
+                        phenotype: this.phenotype,
+                        generation: this.generation,
+                        parents: this.parents,
+                        birthDate: this.birthDate,
+                        breedCount: this.breedCount,
+                        maxBreedCount: this.maxBreedCount,
+                        inbred: this.inbred,
+                        emoji: this.emoji,
+                        ownerId: this.ownerId,
+                        forSale: this.forSale,
+                        salePrice: this.salePrice,
+                        saleCurrency: this.saleCurrency,
+                    };
+                }
 
-    async function renderShop() {
-        let container = document.getElementById('shop');
-        container.innerHTML = `<h3>🏪 Котята на продажу</h3>
-        <div><button id="buyRandomKitten">🎲 Случайный котёнок (200 🪙)</button>
-        <button id="buyRareKitten">✨ Редкий котёнок (650 🪙)</button></div>
-        <div id="shopResult"></div>`;
-        document.getElementById('buyRandomKitten')?.addEventListener('click', async ()=>{
-            let userData = await userDocRef.get();
-            if(userData.data().balance < 200) { showToast("Недостаточно монет", true); return; }
-            await userDocRef.update({ balance: userData.data().balance - 200 });
-            let genes = generateRandomGenes();
-            await createCat(currentUser.uid, `Магик ${Math.floor(Math.random()*100)}`, Math.random()<0.5?'male':'female', null, genes);
-            updateUserBalanceUI(); renderMyCats();
-        });
-        document.getElementById('buyRareKitten')?.addEventListener('click', async ()=>{
-            let userData = await userDocRef.get();
-            if(userData.data().balance < 650) { showToast("Недостаточно монет", true); return; }
-            await userDocRef.update({ balance: userData.data().balance - 650 });
-            let rareGenes = { baseColor:'B', dilution:'D', orange:'O', tabby:'T', whiteSpotting:'W', eyeColor:'G' };
-            await createCat(currentUser.uid, `Легенда ${Date.now().toString().slice(-4)}`, Math.random()<0.5?'male':'female', null, rareGenes);
-            updateUserBalanceUI(); renderMyCats();
-        });
-    }
+                static fromFirestore(data) {
+                    return new Cat(data);
+                }
 
-    // АДМИН-ПАНЕЛЬ (только для админов)
-    async function renderAdmin() {
-        if(!currentUser) return;
-        let userSnap = await userDocRef.get();
-        let isAdmin = userSnap.data()?.isAdmin === true;
-        if(!isAdmin) { document.getElementById('admin').innerHTML = '<p>🚫 Доступ запрещен. Вы не администратор.</p>'; return; }
-        let usersSnap = await db.collection('users').get();
-        let usersList = usersSnap.docs.map(d=>{return {id:d.id, ...d.data()};});
-        let html = `<h2>🔧 Админ управление</h2>
-        <button id="addAdminCoinBtn">➕ Выдать 5000 монет ВСЕМ игрокам</button>
-        <button id="spawnLegendaryCat">🐉 Создать легендарного кота админу</button>
-        <hr><h3>Список пользователей:</h3><ul>`;
-        for(let u of usersList) html += `<li>${u.email} | Баланс: ${u.balance} | Админ: ${u.isAdmin?'✅':'❌'} <button class="toggleAdminBtn" data-id="${u.id}">сменить админку</button></li>`;
-        html += `</ul>`;
-        document.getElementById('admin').innerHTML = html;
-        document.getElementById('addAdminCoinBtn')?.addEventListener('click', async ()=>{
-            let allUsers = await db.collection('users').get();
-            for(let doc of allUsers.docs) await doc.ref.update({ balance: (doc.data().balance||0)+5000 });
-            showToast("💰 5000 монет выданы всем");
-            updateUserBalanceUI();
-        });
-        document.getElementById('spawnLegendaryCat')?.addEventListener('click', async ()=>{
-            let superGenes = { baseColor:'B', dilution:'D', orange:'O', tabby:'T', whiteSpotting:'W', eyeColor:'G' };
-            await createCat(currentUser.uid, `Астральный Творец`, 'male', null, superGenes);
-            renderMyCats();
-        });
-        document.querySelectorAll('.toggleAdminBtn').forEach(btn=>btn.addEventListener('click',async (e)=>{
-            let uid = btn.dataset.id;
-            let targetRef = db.collection('users').doc(uid);
-            let tDoc = await targetRef.get();
-            await targetRef.update({ isAdmin: !tDoc.data().isAdmin });
-            renderAdmin();
-        }));
-    }
-
-    // переключение вкладок
-    function initTabs() {
-        document.querySelectorAll('.tab-btn').forEach(btn=>{
-            btn.addEventListener('click',()=>{
-                let tabId = btn.dataset.tab;
-                document.querySelectorAll('.content-pane').forEach(p=>p.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
-                document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-                btn.classList.add('active');
-                if(tabId==='mycats') renderMyCats();
-                if(tabId==='breed') renderBreed();
-                if(tabId==='market') renderMarket();
-                if(tabId==='care') renderCare();
-                if(tabId==='shop') renderShop();
-                if(tabId==='admin') renderAdmin();
-            });
-        });
-    }
-
-    // АУТЕНТИФИКАЦИЯ
-    function renderAuth() {
-        let authHtml = `<div class="auth-panel"><h2>🐱 CatGenetics - Вход</h2>
-        <div class="input-group"><input type="email" id="loginEmail" placeholder="Email"><input type="password" id="loginPass" placeholder="Пароль"><button id="loginBtn">Войти</button></div>
-        <hr><div class="input-group"><input type="email" id="regEmail" placeholder="Email"><input type="password" id="regPass" placeholder="Пароль"><button id="registerBtn">Регистрация</button></div></div>`;
-        document.getElementById('authContainer').innerHTML = authHtml;
-        document.getElementById('loginBtn').onclick = async () => {
-            let email = document.getElementById('loginEmail').value, pass = document.getElementById('loginPass').value;
-            try{ await auth.signInWithEmailAndPassword(email,pass); } catch(e){ showToast("Ошибка: "+e.message, true); }
-        };
-        document.getElementById('registerBtn').onclick = async () => {
-            let email = document.getElementById('regEmail').value, pass = document.getElementById('regPass').value;
-            try{
-                let cred = await auth.createUserWithEmailAndPassword(email,pass);
-                await db.collection('users').doc(cred.user.uid).set({ email: email, balance: 300, isAdmin: false, lastBonus: 0, username: email.split('@')[0] });
-                await createCat(cred.user.uid, 'Стартовый Кот', 'male');
-                await createCat(cred.user.uid, 'Пушистая Принцесса', 'female');
-                showToast("Аккаунт создан! Вы получили двух котов + 300 монет");
-            } catch(e){ showToast(e.message, true);}
-        };
-    }
-
-    auth.onAuthStateChanged(async (user)=>{
-        if(user){
-            currentUser = user;
-            userDocRef = db.collection('users').doc(user.uid);
-            let snap = await userDocRef.get();
-            if(!snap.exists) await userDocRef.set({ email: user.email, balance: 300, isAdmin: false });
-            document.getElementById('authContainer').style.display='none';
-            document.getElementById('gameContainer').style.display='block';
-            document.getElementById('userName').innerText = user.email.split('@')[0];
-            updateUserBalanceUI();
-            // проверка админа для вкладки
-            let isAdmin = (await userDocRef.get()).data()?.isAdmin === true;
-            let adminTab = document.querySelector('.admin-tab');
-            if(adminTab) adminTab.style.display = isAdmin ? 'inline-block' : 'none';
-            renderMyCats(); renderBreed(); renderMarket(); renderCare(); renderShop(); if(isAdmin) renderAdmin();
-            initTabs();
-        } else {
-            currentUser=null;
-            document.getElementById('authContainer').style.display='block';
-            document.getElementById('gameContainer').style.display='none';
-            renderAuth();
-        }
-    });
-    // запуск автообновления баланса и фоновый процесс старения (опционально)
-    setInterval(async ()=>{
-        if(currentUser){
-            updateUserBalanceUI();
-            let cats = await db.collection('cats').where('ownerId','==',currentUser.uid).get();
-            for(let doc of cats.docs){
-                let data = doc.data();
-                if(Math.random()<0.02) await doc.ref.update({ ageMonths: data.ageMonths+1, health: Math.max(0, data.health-0.5), happiness: Math.max(0,data.happiness-0.3) });
-                if(data.ageMonths > 180 && data.health<10) await doc.ref.delete();
+                canBreed() {
+                    return this.breedCount < this.maxBreedCount;
+                }
             }
-        }
-    }, 30000);
-</script>
+
+            // ============ GAME MANAGER ============
+            class GameManager {
+                constructor() {
+                    this.genetics = new GeneticsEngine();
+                    this.currentUser = null;
+                    this.myCats = [];
+                    this.marketCats = [];
+                    this.breedSlot1 = null;
+                    this.breedSlot2 = null;
+                    this.coins = 200;
+                    this.gems = 10;
+                    this.achievements = {};
+                    this.isAdmin = false;
+                    this.adminEmails = ['admin@catgame.com'];
+                    this.lastDailyReward = 0;
+                    this.listeners = [];
+                    this.init();
+                }
+
+                async init() {
+                    this.setupAuthListener();
+                    this.setupUIListeners();
+                }
+
+                setupAuthListener() {
+                    auth.onAuthStateChanged(async (user) => {
+                        if (user) {
+                            this.currentUser = user;
+                            this.isAdmin = this.adminEmails.includes(user.email?.toLowerCase());
+                            document.getElementById('auth-screen').style.display = 'none';
+                            document.getElementById('main-screen').style.display = 'block';
+                            document.getElementById('username-display').textContent =
+                                user.displayName || user.email?.split('@')[0] || 'Игрок';
+                            if (this.isAdmin) {
+                                document.getElementById('admin-tab-btn').style.display = 'inline-block';
+                            }
+                            await this.loadPlayerData();
+                            this.setupRealtimeListeners();
+                            this.renderAll();
+                        } else {
+                            document.getElementById('auth-screen').style.display = 'flex';
+                            document.getElementById('main-screen').style.display = 'none';
+                            this.currentUser = null;
+                            this.myCats = [];
+                            this.isAdmin = false;
+                            document.getElementById('admin-tab-btn').style.display = 'none';
+                            this.unsubscribeAll();
+                        }
+                    });
+                }
+
+                async loadPlayerData() {
+                    if (!this.currentUser) return;
+                    try {
+                        const userDoc = await db.collection('players').doc(this.currentUser.uid).get();
+                        if (userDoc.exists) {
+                            const data = userDoc.data();
+                            this.coins = data.coins ?? 200;
+                            this.gems = data.gems ?? 10;
+                            this.achievements = data.achievements || {};
+                            this.lastDailyReward = data.lastDailyReward || 0;
+                            this.isAdmin = this.adminEmails.includes(this.currentUser.email?.toLowerCase()) || data
+                                .isAdmin || false;
+                            if (this.isAdmin && !this.adminEmails.includes(this.currentUser.email?.toLowerCase())) {
+                                this.adminEmails.push(this.currentUser.email?.toLowerCase());
+                            }
+                            if (this.isAdmin) {
+                                document.getElementById('admin-tab-btn').style.display = 'inline-block';
+                            }
+                        } else {
+                            await db.collection('players').doc(this.currentUser.uid).set({
+                                email: this.currentUser.email,
+                                displayName: this.currentUser.displayName || this.currentUser.email?.split('@')[0],
+                                coins: this.coins,
+                                gems: this.gems,
+                                achievements: {},
+                                lastDailyReward: 0,
+                                isAdmin: this.isAdmin,
+                                createdAt: Date.now(),
+                            });
+                        }
+                        const catsSnap = await db.collection('cats').where('ownerId', '==', this.currentUser.uid).get();
+                        this.myCats = catsSnap.docs.map(d => Cat.fromFirestore(d.data()));
+                    } catch (e) {
+                        console.error('Ошибка загрузки данных:', e);
+                        this.showNotification('Ошибка загрузки данных', 'error');
+                    }
+                }
+
+                setupRealtimeListeners() {
+                    this.unsubscribeAll();
+                    const l1 = db.collection('cats').where('ownerId', '==', this.currentUser?.uid || 'none')
+                        .onSnapshot(snap => {
+                            if (this.currentUser) {
+                                this.myCats = snap.docs.map(d => Cat.fromFirestore(d.data()));
+                                this.renderMyCats();
+                                this.updateBreedSlots();
+                            }
+                        }, err => console.error('Realtime cats error:', err));
+                    this.listeners.push(l1);
+
+                    const l2 = db.collection('cats').where('forSale', '==', true)
+                        .onSnapshot(snap => {
+                            this.marketCats = snap.docs.map(d => Cat.fromFirestore(d.data())).filter(c => c
+                                .ownerId !== (this.currentUser?.uid || ''));
+                            this.renderMarket();
+                        }, err => console.error('Market listener error:', err));
+                    this.listeners.push(l2);
+                }
+
+                unsubscribeAll() {
+                    this.listeners.forEach(l => { try { l(); } catch (e) {} });
+                    this.listeners = [];
+                }
+
+                setupUIListeners() {
+                    // Auth
+                    document.getElementById('auth-submit-btn').addEventListener('click', () => this.handleAuth());
+                    document.getElementById('toggle-auth-mode').addEventListener('click', () => this.toggleAuthMode());
+                    document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
+                    document.getElementById('auth-pass').addEventListener('keydown', (e) => { if (e.key === 'Enter') this
+                            .handleAuth(); });
+                    document.getElementById('auth-email').addEventListener('keydown', (e) => { if (e.key === 'Enter')
+                            document.getElementById('auth-pass').focus(); });
+
+                    // Tabs
+                    document.querySelectorAll('.tab-btn').forEach(btn => {
+                        btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+                    });
+
+                    // Buttons
+                    document.getElementById('btn-random-cat').addEventListener('click', () => this.generateRandomCat());
+                    document.getElementById('btn-daily-reward').addEventListener('click', () => this.claimDailyReward());
+                    document.getElementById('btn-breed').addEventListener('click', () => this.breedCats());
+                    document.getElementById('btn-refresh-market').addEventListener('click', () => this.renderMarket());
+                    document.getElementById('btn-sell-cat').addEventListener('click', () => this.openSellDialog());
+                    document.getElementById('btn-admin-give')?.addEventListener('click', () => this.adminGiveResources());
+                    document.getElementById('btn-admin-create-cat')?.addEventListener('click', () =>
+                        this.adminCreateCat());
+                    document.getElementById('btn-admin-reset-market')?.addEventListener('click', () =>
+                    this.adminResetMarket());
+                    document.getElementById('btn-admin-recalc')?.addEventListener('click', () => this
+                    .adminRecalcLeaderboard());
+                    document.getElementById('header-logo').addEventListener('click', () => this.switchTab('my-cats'));
+
+                    // Modal close
+                    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+                        if (e.target === document.getElementById('modal-overlay')) this.closeModal();
+                    });
+                }
+
+                // ============ AUTH ============
+                isLoginMode = true;
+                handleAuth() {
+                    const email = document.getElementById('auth-email').value.trim();
+                    const pass = document.getElementById('auth-pass').value.trim();
+                    const name = document.getElementById('auth-name')?.value.trim();
+                    const errorEl = document.getElementById('auth-error');
+                    errorEl.textContent = '';
+
+                    if (!email || !pass) { errorEl.textContent = 'Заполните все поля';
+                        return; }
+                    if (pass.length < 6) { errorEl.textContent = 'Пароль минимум 6 символов';
+                        return; }
+                    if (!this.isLoginMode && !name) { errorEl.textContent = 'Введите никнейм';
+                        return; }
+
+                    document.getElementById('auth-loading').style.display = 'block';
+                    document.getElementById('auth-form').style.display = 'none';
+
+                    const action = this.isLoginMode ?
+                        auth.signInWithEmailAndPassword(email, pass) :
+                        auth.createUserWithEmailAndPassword(email, pass).then(r => {
+                            return r.user.updateProfile({ displayName: name }).then(() => r);
+                        });
+
+                    action.then(() => {
+                        document.getElementById('auth-loading').style.display = 'none';
+                        document.getElementById('auth-form').style.display = 'block';
+                        document.getElementById('auth-pass').value = '';
+                    }).catch(err => {
+                        document.getElementById('auth-loading').style.display = 'none';
+                        document.getElementById('auth-form').style.display = 'block';
+                        errorEl.textContent = this.translateAuthError(err.code);
+                    });
+                }
+
+                toggleAuthMode() {
+                    this.isLoginMode = !this.isLoginMode;
+                    document.getElementById('auth-submit-btn').textContent = this.isLoginMode ? 'Войти' : 'Зарегистрироваться';
+                    document.getElementById('auth-toggle-text').innerHTML = this.isLoginMode ?
+                        'Нет аккаунта? <span id="toggle-auth-mode">Зарегистрироваться</span>' :
+                        'Уже есть аккаунт? <span id="toggle-auth-mode">Войти</span>';
+                    document.getElementById('name-group').style.display = this.isLoginMode ? 'none' : 'block';
+                    document.getElementById('toggle-auth-mode').addEventListener('click', () => this.toggleAuthMode());
+                    document.getElementById('auth-error').textContent = '';
+                }
+
+                translateAuthError(code) {
+                    const map = {
+                        'auth/email-already-in-use': 'Email уже используется',
+                        'auth/invalid-email': 'Некорректный email',
+                        'auth/user-not-found': 'Пользователь не найден',
+                        'auth/wrong-password': 'Неверный пароль',
+                        'auth/weak-password': 'Пароль слишком слабый',
+                        'auth/invalid-credential': 'Неверные учётные данные',
+                        'auth/too-many-requests': 'Слишком много попыток. Подождите.',
+                    };
+                    return map[code] || 'Ошибка авторизации';
+                }
+
+                // ============ CAT GENERATION ============
+                async generateRandomCat(specialRarity = null, targetOwnerId = null) {
+                    const ownerId = targetOwnerId || this.currentUser?.uid;
+                    if (!ownerId) return;
+                    if (!targetOwnerId && this.coins < 50) {
+                        this.showNotification('Недостаточно монет! Нужно 50🪙', 'error');
+                        return;
+                    }
+
+                    const genotype = this.genetics.getRandomGenotype();
+                    const sex = this.genetics.determineSex();
+                    const rarity = specialRarity || this.genetics.calculateRarity(genotype);
+                    const phenotype = this.genetics.getPhenotypeDescription(genotype, sex);
+                    const emoji = this.genetics.getCatEmoji(genotype, sex);
+
+                    const namePool = ['Мурзик', 'Барсик', 'Симба', 'Луна', 'Клео', 'Оскар', 'Феликс', 'Гарфилд', 'Том',
+                        'Нала', 'Багира', 'Шерхан', 'Леопольд', 'Матроскин', 'Чешир', 'Салем', 'Люцифер', 'Оливер',
+                        'Марсель', 'Жасмин', 'Изабель', 'Вискас', 'Персик', 'Карамелька', 'Зефир', 'Тигра', 'Пушинка',
+                        'Снежок', 'Дымка', 'Рыжик'
+                    ];
+                    const name = namePool[Math.floor(Math.random() * namePool.length)] + ' ' + this.generateSuffix();
+
+                    const cat = new Cat({
+                        genotype,
+                        sex,
+                        rarity,
+                        phenotype,
+                        emoji,
+                        name,
+                        ownerId,
+                        birthDate: Date.now(),
+                        generation: 1,
+                    });
+
+                    try {
+                        await db.collection('cats').doc(cat.id).set(cat.toFirestore());
+                        if (!targetOwnerId) {
+                            this.coins -= 50;
+                            await this.savePlayerData();
+                        }
+                        this.showNotification(`Новый кот: ${cat.name} (${this.translateRarity(rarity)})!`, 'success');
+                        this.renderAll();
+                    } catch (e) {
+                        console.error('Ошибка создания кота:', e);
+                        this.showNotification('Ошибка создания кота', 'error');
+                    }
+                }
+
+                generateSuffix() {
+                    const suffixes = ['I', 'II', 'III', 'IV', 'V', 'Jr.', 'Sr.', 'the Great', '✨', '🌟', '💫', '⭐',
+                        'von Cat', 'McFluff', 'Pawsome', 'Whiskers', 'Floof'
+                    ];
+                    return suffixes[Math.floor(Math.random() * suffixes.length)];
+                }
+
+                translateRarity(rarity) {
+                    const map = { 'common': 'Обычный', 'uncommon': 'Необычный', 'rare': 'Редкий', 'epic': 'Эпический',
+                        'legendary': 'Легендарный' };
+                    return map[rarity] || rarity;
+                }
+
+                // ============ BREEDING ============
+                selectBreedSlot(slot) {
+                    if (slot === 1 && this.breedSlot1) { this.breedSlot1 = null; } else if (slot === 2 && this
+                        .breedSlot2) { this.breedSlot2 = null; } else {
+                        this.showCatSelector((cat) => {
+                            if (slot === 1) {
+                                if (cat.sex !== 'male') { this.showNotification('Нужен кот-отец (самец)!',
+                                        'error'); return; }
+                                this.breedSlot1 = cat;
+                            } else {
+                                if (cat.sex !== 'female') { this.showNotification('Нужна кошка-мать (самка)!',
+                                        'error'); return; }
+                                this.breedSlot2 = cat;
+                            }
+                            this.updateBreedSlots();
+                            this.closeModal();
+                        });
+                        return;
+                    }
+                    this.updateBreedSlots();
+                }
+
+                updateBreedSlots() {
+                    const slot1 = document.getElementById('breed-slot-1');
+                    const slot2 = document.getElementById('breed-slot-2');
+                    const btnBreed = document.getElementById('btn-breed');
+                    const info = document.getElementById('breed-info');
+
+                    if (this.breedSlot1) {
+                        slot1.classList.add('filled');
+                        slot1.innerHTML =
+                            `<span style="font-size:3em;">${this.breedSlot1.emoji}</span><strong>${this.breedSlot1.name}</strong><small>♂ ${this.translateRarity(this.breedSlot1.rarity)} | Поколение ${this.breedSlot1.generation}</small>`;
+                    } else {
+                        slot1.classList.remove('filled');
+                        slot1.innerHTML = '<span class="plus-icon">➕</span><span>Выбрать кота-отца</span>';
+                    }
+                    if (this.breedSlot2) {
+                        slot2.classList.add('filled');
+                        slot2.innerHTML =
+                            `<span style="font-size:3em;">${this.breedSlot2.emoji}</span><strong>${this.breedSlot2.name}</strong><small>♀ ${this.translateRarity(this.breedSlot2.rarity)} | Поколение ${this.breedSlot2.generation}</small>`;
+                    } else {
+                        slot2.classList.remove('filled');
+                        slot2.innerHTML = '<span class="plus-icon">➕</span><span>Выбрать кошку-мать</span>';
+                    }
+
+                    if (this.breedSlot1 && this.breedSlot2) {
+                        const canBreed1 = this.breedSlot1.canBreed();
+                        const canBreed2 = this.breedSlot2.canBreed();
+                        if (!canBreed1 || !canBreed2) {
+                            btnBreed.disabled = true;
+                            info.textContent = 'Один из котов исчерпал лимит разведений!';
+                        } else if (this.coins < 100) {
+                            btnBreed.disabled = true;
+                            info.textContent = 'Недостаточно монет (нужно 100🪙)';
+                        } else {
+                            btnBreed.disabled = false;
+                            info.textContent = 'Готовы к скрещиванию! Шанс мутации: 3%';
+                            // Show gene preview
+                            const preview = document.getElementById('breeding-genes-preview');
+                            preview.style.display = 'block';
+                            preview.textContent =
+                                '🧬 Гены отца: ' + this.genetics.getGeneString(this.breedSlot1.genotype) +
+                                '\n🧬 Гены матери: ' + this.genetics.getGeneString(this.breedSlot2.genotype);
+                        }
+                    } else {
+                        btnBreed.disabled = true;
+                        info.textContent = 'Выберите обоих родителей';
+                        document.getElementById('breeding-genes-preview').style.display = 'none';
+                    }
+                }
+
+                async breedCats() {
+                    if (!this.breedSlot1 || !this.breedSlot2) return;
+                    if (!this.breedSlot1.canBreed() || !this.breedSlot2.canBreed()) {
+                        this.showNotification('Один из котов достиг лимита разведений', 'error');
+                        return;
+                    }
+                    if (this.coins < 100) { this.showNotification('Недостаточно монет!', 'error'); return; }
+
+                    const parent1 = this.breedSlot1;
+                    const parent2 = this.breedSlot2;
+                    const childGenotype = this.genetics.breed(parent1.genotype, parent2.genotype, parent1.sex, parent2.sex);
+                    const childSex = this.genetics.determineSex();
+                    const childRarity = this.genetics.calculateRarity(childGenotype);
+                    const childPhenotype = this.genetics.getPhenotypeDescription(childGenotype, childSex);
+                    const childEmoji = this.genetics.getCatEmoji(childGenotype, childSex);
+
+                    // Check inbreeding
+                    const isInbred = parent1.parents.some(p => parent2.parents.includes(p)) ||
+                        parent1.id === parent2.id ||
+                        (parent1.parents.length > 0 && parent2.parents.length > 0 && parent1.parents.some(p =>
+                            parent2.parents.includes(p)));
+
+                    const namePrefixes = ['Котёнок', 'Малыш', 'Baby', 'Tiny', 'Little'];
+                    const childName = namePrefixes[Math.floor(Math.random() * namePrefixes.length)] + ' ' + ['Пушистик',
+                        'Лапка', 'Мяу', 'Клубок', 'Шерстка'
+                    ][Math.floor(Math.random() * 5)];
+
+                    const child = new Cat({
+                        genotype: childGenotype,
+                        sex: childSex,
+                        rarity: childRarity,
+                        phenotype: childPhenotype,
+                        emoji: childEmoji,
+                        name: childName,
+                        ownerId: this.currentUser.uid,
+                        generation: Math.max(parent1.generation, parent2.generation) + 1,
+                        parents: [parent1.id, parent2.id],
+                        birthDate: Date.now(),
+                        inbred: isInbred,
+                    });
+
+                    if (isInbred) {
+                        child.maxBreedCount = Math.max(1, child.maxBreedCount - 3);
+                        child.rarity = 'common';
+                    }
+
+                    try {
+                        await db.collection('cats').doc(child.id).set(child.toFirestore());
+                        parent1.breedCount++;
+                        parent2.breedCount++;
+                        await db.collection('cats').doc(parent1.id).update({ breedCount: parent1.breedCount });
+                        await db.collection('cats').doc(parent2.id).update({ breedCount: parent2.breedCount });
+                        this.coins -= 100;
+                        await this.savePlayerData();
+                        this.breedSlot1 = parent1.breedCount < parent1.maxBreedCount ? parent1 : null;
+                        this.breedSlot2 = parent2.breedCount < parent2.maxBreedCount ? parent2 : null;
+                        this.updateBreedSlots();
+                        const resultDiv = document.getElementById('breed-result');
+                        resultDiv.innerHTML =
+                            `<div class="cat-card" style="display:inline-block;margin:0 auto;border-color:var(--gold);">
+                    <div class="rarity-border rarity-${childRarity}"></div>
+                    <span class="cat-emoji">${childEmoji}</span>
+                    <div class="cat-name">${child.name}</div>
+                    <div class="cat-info">${this.translateRarity(childRarity)} | ${childSex==='male'?'♂':'♀'} | Поколение ${child.generation}</div>
+                    ${isInbred?'<div class="tag" style="background:#ff4444;color:#fff;">⚠️ Инбридинг</div>':''}
+                  </div>`;
+                        this.showNotification(`🎉 Родился котёнок: ${child.name}!`, 'success');
+                        this.checkAchievements();
+                    } catch (e) {
+                        console.error('Breed error:', e);
+                        this.showNotification('Ошибка при разведении', 'error');
+                    }
+                }
+
+                showCatSelector(callback) {
+                    const modal = document.getElementById('modal-content');
+                    modal.innerHTML = `
+                <button class="modal-close" onclick="window._game.closeModal()">✕</button>
+                <h3>Выберите кота</h3>
+                <div class="grid-3" style="max-height:55vh;overflow-y:auto;margin-top:12px;">
+                  ${this.myCats.map(c=>`
+                    <div class="cat-card" onclick="window._game._catSelectorCallback('${c.id}')" style="cursor:pointer;">
+                      <div class="rarity-border rarity-${c.rarity}"></div>
+                      <span class="cat-emoji">${c.emoji}</span>
+                      <div class="cat-name">${c.name}</div>
+                      <div class="cat-info">${this.translateRarity(c.rarity)} | ${c.sex==='male'?'♂':'♀'} | Поколение ${c.generation}</div>
+                      <div class="cat-tags">
+                        <span class="tag tag-${c.sex}">${c.sex==='male'?'Самец':'Самка'}</span>
+                        <span class="tag">Разведений: ${c.breedCount}/${c.maxBreedCount}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                  ${this.myCats.length===0?'<p style="color:var(--muted);grid-column:1/-1;text-align:center;">Нет доступных котов</p>':''}
+                </div>`;
+                    document.getElementById('modal-overlay').style.display = 'flex';
+                    window._game = this;
+                    this._catSelectorCallback = callback;
+                }
+
+                _catSelectorCallback(catId) {
+                    const cat = this.myCats.find(c => c.id === catId);
+                    if (cat && this._catSelectorCallback) {
+                        this._catSelectorCallback(cat);
+                    }
+                }
+
+                // ============ MARKET ============
+                async openSellDialog() {
+                    if (this.myCats.length === 0) { this.showNotification('У вас нет котов для продажи', 'error'); return; }
+                    const modal = document.getElementById('modal-content');
+                    modal.innerHTML = `
+                <button class="modal-close" onclick="window._game.closeModal()">✕</button>
+                <h3>💸 Выставить кота на продажу</h3>
+                <div style="margin:10px 0;"><label>Кот:</label>
+                  <select id="sell-cat-select" style="width:100%;padding:10px;border-radius:8px;background:var(--input-bg);color:#fff;border:1px solid var(--border);">
+                    ${this.myCats.filter(c=>!c.forSale).map(c=>`<option value="${c.id}">${c.name} (${this.translateRarity(c.rarity)})</option>`).join('')}
+                  </select>
+                </div>
+                <div class="input-group"><label>Цена (монеты)</label><input type="number" id="sell-price" value="50" min="10" max="100000"></div>
+                <button class="btn btn-accent" id="btn-confirm-sell">Выставить на продажу</button>
+                <p class="error-msg" id="sell-error"></p>`;
+                    document.getElementById('modal-overlay').style.display = 'flex';
+                    document.getElementById('btn-confirm-sell').addEventListener('click', async () => {
+                        const catId = document.getElementById('sell-cat-select').value;
+                        const price = parseInt(document.getElementById('sell-price').value) || 50;
+                        const cat = this.myCats.find(c => c.id === catId);
+                        if (!cat) return;
+                        cat.forSale = true;
+                        cat.salePrice = Math.max(10, Math.min(100000, price));
+                        cat.saleCurrency = 'coins';
+                        try {
+                            await db.collection('cats').doc(cat.id).update({ forSale: true,
+                                salePrice: cat.salePrice, saleCurrency: 'coins' });
+                            this.showNotification(`${cat.name} выставлен на рынок за ${cat.salePrice}🪙`,
+                                'success');
+                            this.closeModal();
+                        } catch (e) { this.showNotification('Ошибка', 'error'); }
+                    });
+                }
+
+                async buyCat(cat) {
+                    if (!this.currentUser) return;
+                    if (this.coins < cat.salePrice) {
+                        this.showNotification('Недостаточно монет для покупки!', 'error');
+                        return;
+                    }
+                    const fee = Math.floor(cat.salePrice * 0.05);
+                    const sellerGets = cat.salePrice - fee;
+                    try {
+                        const batch = db.batch();
+                        batch.update(db.collection('cats').doc(cat.id), {
+                            ownerId: this.currentUser.uid,
+                            forSale: false,
+                            salePrice: 0,
+                        });
+                        const sellerDoc = await db.collection('players').doc(cat.ownerId).get();
+                        if (sellerDoc.exists) {
+                            batch.update(db.collection('players').doc(cat.ownerId), {
+                                coins: (sellerDoc.data().coins || 0) + sellerGets,
+                            });
+                        }
+                        this.coins -= cat.salePrice;
+                        batch.update(db.collection('players').doc(this.currentUser.uid), { coins: this.coins });
+                        await batch.commit();
+                        this.showNotification(`Куплен ${cat.name} за ${cat.salePrice}🪙!`, 'success');
+                        await this.loadPlayerData();
+                    } catch (e) {
+                        console.error('Buy error:', e);
+                        this.showNotification('Ошибка покупки', 'error');
+                    }
+                }
+
+                renderMarket() {
+                    const grid = document.getElementById('market-grid');
+                    if (!grid) return;
+                    if (this.marketCats.length === 0) {
+                        grid.innerHTML =
+                            '<p style="color:var(--muted);grid-column:1/-1;text-align:center;padding:30px;">На рынке пока нет котов</p>';
+                        return;
+                    }
+                    grid.innerHTML = this.marketCats.map(c => `
+                <div class="cat-card">
+                  <div class="rarity-border rarity-${c.rarity}"></div>
+                  <span class="cat-emoji">${c.emoji}</span>
+                  <div class="cat-name">${c.name}</div>
+                  <div class="cat-info">${this.translateRarity(c.rarity)} | ${c.sex==='male'?'♂':'♀'} | Поколение ${c.generation}</div>
+                  <div class="cat-info">${c.phenotype?.baseColor||'?'} | ${c.phenotype?.pattern||'?'}</div>
+                  <div style="font-weight:700;color:var(--gold);margin:6px 0;">💰 ${c.salePrice}🪙</div>
+                  <button class="btn btn-green btn-sm" onclick="window._game.buyCat(window._game.marketCats.find(mc=>mc.id==='${c.id}'))">Купить</button>
+                </div>
+              `).join('');
+                }
+
+                // ============ LEADERBOARD ============
+                async renderLeaderboard() {
+                    const list = document.getElementById('leaderboard-list');
+                    if (!list) return;
+                    try {
+                        const snap = await db.collection('players').orderBy('coins', 'desc').limit(50).get();
+                        const players = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        list.innerHTML = players.map((p, i) => `
+                  <div class="stat-row" style="align-items:center;">
+                    <span>${i+1}. ${p.displayName||p.email||'Игрок'} ${i===0?'👑':i===1?'🥈':i===2?'🥉':''}</span>
+                    <span>🪙 ${(p.coins||0).toLocaleString()} | 💎 ${(p.gems||0).toLocaleString()}</span>
+                  </div>
+                `).join('');
+                    } catch (e) {
+                        list.innerHTML = '<p style="color:var(--muted);">Ошибка загрузки рейтинга</p>';
+                    }
+                }
+
+                // ============ ACHIEVEMENTS ============
+                achievementDefs = [
+                    { id: 'first_cat', name: 'Первый кот', desc: 'Получить первого кота', icon: '🐱', check: () => this
+                            .myCats.length >= 1 },
+                    { id: 'collector_5', name: 'Коллекционер', desc: 'Собрать 5 котов', icon: '📦', check: () => this.myCats
+                            .length >= 5 },
+                    { id: 'collector_20', name: 'Большая коллекция', desc: 'Собрать 20 котов', icon: '🏪', check: () => this
+                            .myCats.length >= 20 },
+                    { id: 'first_breed', name: 'Заводчик', desc: 'Развести первого котёнка', icon: '💕', check: () => this
+                            .myCats.some(c => c.generation > 1) },
+                    { id: 'breed_10', name: 'Опытный заводчик', desc: 'Развести 10 котят', icon: '🏭', check: () => this
+                            .myCats.filter(c => c.generation > 1).length >= 10 },
+                    { id: 'rare_cat', name: 'Редкий экземпляр', desc: 'Получить редкого кота', icon: '💎', check: () => this
+                            .myCats.some(c => c.rarity === 'rare') },
+                    { id: 'epic_cat', name: 'Эпический кот', desc: 'Получить эпического кота', icon: '🌟', check: () => this
+                            .myCats.some(c => c.rarity === 'epic') },
+                    { id: 'legendary_cat', name: 'Легендарный!', desc: 'Получить легендарного кота', icon: '👑', check: () =>
+                            this.myCats.some(c => c.rarity === 'legendary') },
+                    { id: 'rich_1000', name: 'Богач', desc: 'Накопить 1000 монет', icon: '💰', check: () => this.coins >=
+                            1000 },
+                    { id: 'rich_10000', name: 'Миллионер', desc: 'Накопить 10000 монет', icon: '💸', check: () => this.coins >=
+                            10000 },
+                    { id: 'market_sale', name: 'Продавец', desc: 'Продать кота на рынке', icon: '🏷️', check: () => this
+                            .achievements['market_sale'] || false },
+                    { id: 'market_buy', name: 'Покупатель', desc: 'Купить кота на рынке', icon: '🛒', check: () => this
+                            .achievements['market_buy'] || false },
+                ];
+
+                checkAchievements() {
+                    let changed = false;
+                    for (const ach of this.achievementDefs) {
+                        if (!this.achievements[ach.id] && ach.check()) {
+                            this.achievements[ach.id] = Date.now();
+                            changed = true;
+                            this.showNotification(`🎯 Достижение: ${ach.icon} ${ach.name}!`, 'info');
+                            this.gems += 5;
+                        }
+                    }
+                    if (changed) this.savePlayerData();
+                }
+
+                renderAchievements() {
+                    const grid = document.getElementById('achievements-grid');
+                    if (!grid) return;
+                    grid.innerHTML = this.achievementDefs.map(ach => {
+                        const unlocked = !!this.achievements[ach.id];
+                        return `
+                  <div style="background:var(--card);border-radius:var(--radius);padding:14px;border:1px solid var(--border);opacity:${unlocked?1:0.5};">
+                    <span style="font-size:2em;">${ach.icon}</span>
+                    <strong>${ach.name}</strong>
+                    <p style="font-size:0.8em;color:var(--muted);">${ach.desc}</p>
+                    ${unlocked? '<span style="color:var(--green);font-weight:700;">✅ Получено</span>': '<span style="color:var(--muted);">🔒 Закрыто</span>'}
+                  </div>`;
+                    }).join('');
+                }
+
+                // ============ DAILY REWARD ============
+                async claimDailyReward() {
+                    const now = Date.now();
+                    const oneDay = 24 * 60 * 60 * 1000;
+                    if (now - this.lastDailyReward < oneDay) {
+                        const remaining = Math.ceil((oneDay - (now - this.lastDailyReward)) / (60 * 60 * 1000));
+                        this.showNotification(`Следующая награда через ${remaining} ч.`, 'error');
+                        return;
+                    }
+                    this.coins += 100;
+                    this.gems += 3;
+                    this.lastDailyReward = now;
+                    await this.savePlayerData();
+                    this.showNotification('🎁 Ежедневная награда: +100🪙 +3💎!', 'success');
+                    this.renderAll();
+                }
+
+                // ============ ADMIN ============
+                async adminGiveResources() {
+                    if (!this.isAdmin) return;
+                    const email = document.getElementById('admin-target-email').value.trim();
+                    const coins = parseInt(document.getElementById('admin-coins').value) || 0;
+                    const gems = parseInt(document.getElementById('admin-gems').value) || 0;
+                    const msgEl = document.getElementById('admin-msg');
+                    if (!email) { msgEl.textContent = 'Введите email';
+                        return; }
+                    try {
+                        const snap = await db.collection('players').where('email', '==', email).get();
+                        if (snap.empty) { msgEl.textContent = 'Игрок не найден';
+                            return; }
+                        const doc = snap.docs[0];
+                        const data = doc.data();
+                        await db.collection('players').doc(doc.id).update({
+                            coins: (data.coins || 0) + coins,
+                            gems: (data.gems || 0) + gems,
+                        });
+                        msgEl.textContent = `✅ Выдано ${coins}🪙 и ${gems}💎 игроку ${email}`;
+                        msgEl.style.color = '#4caf84';
+                    } catch (e) { msgEl.textContent = 'Ошибка: ' + e.message;
+                        msgEl.style.color = '#ff6b6b'; }
+                }
+
+                async adminCreateCat() {
+                    if (!this.isAdmin) return;
+                    const email = document.getElementById('admin-cat-email').value.trim();
+                    const rarity = document.getElementById('admin-cat-rarity').value;
+                    const msgEl = document.getElementById('admin-msg');
+                    if (!email) { msgEl.textContent = 'Введите email';
+                        return; }
+                    try {
+                        const snap = await db.collection('players').where('email', '==', email).get();
+                        if (snap.empty) { msgEl.textContent = 'Игрок не найден';
+                            return; }
+                        const ownerId = snap.docs[0].id;
+                        await this.generateRandomCat(rarity, ownerId);
+                        msgEl.textContent = `✅ Создан ${this.translateRarity(rarity)} кот для ${email}`;
+                        msgEl.style.color = '#4caf84';
+                    } catch (e) { msgEl.textContent = 'Ошибка: ' + e.message;
+                        msgEl.style.color = '#ff6b6b'; }
+                }
+
+                async adminResetMarket() {
+                    if (!this.isAdmin) return;
+                    try {
+                        const snap = await db.collection('cats').where('forSale', '==', true).get();
+                        const batch = db.batch();
+                        snap.docs.forEach(d => batch.update(d.ref, { forSale: false, salePrice: 0 }));
+                        await batch.commit();
+                        this.showNotification('Рынок очищен', 'success');
+                    } catch (e) { this.showNotification('Ошибка', 'error'); }
+                }
+
+                async adminRecalcLeaderboard() {
+                    if (!this.isAdmin) return;
+                    await this.renderLeaderboard();
+                    this.showNotification('Рейтинги обновлены', 'success');
+                }
+
+                // ============ HELPERS ============
+                async savePlayerData() {
+                    if (!this.currentUser) return;
+                    try {
+                        await db.collection('players').doc(this.currentUser.uid).update({
+                            coins: this.coins,
+                            gems: this.gems,
+                            achievements: this.achievements,
+                            lastDailyReward: this.lastDailyReward,
+                            isAdmin: this.isAdmin,
+                        });
+                    } catch (e) {
+                        await db.collection('players').doc(this.currentUser.uid).set({
+                            email: this.currentUser.email,
+                            displayName: this.currentUser.displayName || this.currentUser.email?.split('@')[0],
+                            coins: this.coins,
+                            gems: this.gems,
+                            achievements: this.achievements,
+                            lastDailyReward: this.lastDailyReward,
+                            isAdmin: this.isAdmin,
+                            createdAt: Date.now(),
+                        }, { merge: true });
+                    }
+                }
+
+                switchTab(tabName) {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    const btn = document.querySelector(`[data-tab="${tabName}"]`);
+                    const content = document.getElementById(`tab-${tabName}`);
+                    if (btn) btn.classList.add('active');
+                    if (content) content.classList.add('active');
+                    if (tabName === 'leaderboard') this.renderLeaderboard();
+                    if (tabName === 'achievements') this.renderAchievements();
+                    if (tabName === 'admin' && this.isAdmin) this.renderAdminStats();
+                    if (tabName === 'market') this.renderMarket();
+                    if (tabName === 'breeding') this.updateBreedSlots();
+                }
+
+                renderAll() {
+                    this.renderMyCats();
+                    this.renderMarket();
+                    this.renderAchievements();
+                    this.updateBreedSlots();
+                    this.updateHeader();
+                    this.checkAchievements();
+                }
+
+                renderMyCats() {
+                    const grid = document.getElementById('my-cats-grid');
+                    const countEl = document.getElementById('cat-count');
+                    if (!grid) return;
+                    countEl.textContent = this.myCats.length;
+                    if (this.myCats.length === 0) {
+                        grid.innerHTML =
+                            '<p style="color:var(--muted);grid-column:1/-1;text-align:center;padding:40px;">У вас пока нет котов. Нажмите "Случайный кот" чтобы начать!</p>';
+                        return;
+                    }
+                    grid.innerHTML = this.myCats.map(c => `
+                <div class="cat-card" onclick="window._game.showCatDetail('${c.id}')">
+                  <div class="rarity-border rarity-${c.rarity}"></div>
+                  <span class="cat-emoji">${c.emoji}</span>
+                  <div class="cat-name">${c.name}</div>
+                  <div class="cat-info">${this.translateRarity(c.rarity)} | ${c.sex==='male'?'♂':'♀'}</div>
+                  <div class="cat-info">${c.phenotype?.baseColor||'?'} | ${c.phenotype?.pattern||'?'}</div>
+                  <div class="cat-tags">
+                    <span class="tag tag-${c.sex}">${c.sex==='male'?'Самец':'Самка'}</span>
+                    <span class="tag">Пок. ${c.generation}</span>
+                    <span class="tag">Разв: ${c.breedCount}/${c.maxBreedCount}</span>
+                    ${c.inbred?'<span class="tag" style="background:#ff4444;">⚠️</span>':''}
+                    ${c.forSale?'<span class="tag" style="background:var(--gold);color:#000;">Продаётся</span>':''}
+                  </div>
+                </div>
+              `).join('');
+                }
+
+                showCatDetail(catId) {
+                    const cat = this.myCats.find(c => c.id === catId);
+                    if (!cat) return;
+                    const modal = document.getElementById('modal-content');
+                    modal.innerHTML = `
+                <button class="modal-close" onclick="window._game.closeModal()">✕</button>
+                <div style="text-align:center;">
+                  <span style="font-size:6em;">${cat.emoji}</span>
+                  <h2>${cat.name}</h2>
+                  <div class="rarity-border rarity-${cat.rarity}" style="height:4px;width:100%;margin:8px 0;"></div>
+                  <p><strong>Редкость:</strong> ${this.translateRarity(cat.rarity)}</p>
+                  <p><strong>Пол:</strong> ${cat.sex==='male'?'Самец ♂':'Самка ♀'}</p>
+                  <p><strong>Поколение:</strong> ${cat.generation}</p>
+                  <p><strong>Разведений:</strong> ${cat.breedCount} / ${cat.maxBreedCount}</p>
+                  ${cat.inbred?'<p style="color:#ff4444;">⚠️ Инбредный кот</p>':''}
+                  <hr style="border-color:var(--border);margin:12px 0;">
+                  <p><strong>Окрас:</strong> ${cat.phenotype?.baseColor||'Неизвестно'}</p>
+                  <p><strong>Узор:</strong> ${cat.phenotype?.pattern||'Неизвестно'}</p>
+                  <p><strong>Шерсть:</strong> ${cat.phenotype?.furLength||'?'}</p>
+                  <p><strong>Уши:</strong> ${cat.phenotype?.ears||'?'}</p>
+                  <p><strong>Хвост:</strong> ${cat.phenotype?.tail||'?'}</p>
+                  <p><strong>Глаза:</strong> ${cat.phenotype?.eyes||'?'}</p>
+                  <p><strong>Размер:</strong> ${cat.phenotype?.size||'?'}</p>
+                  <p><strong>Характер:</strong> ${cat.phenotype?.personality||'?'}</p>
+                  <div class="gene-display" style="margin-top:10px;">🧬 ${this.genetics.getGeneString(cat.genotype)}</div>
+                  <p style="font-size:0.7em;color:var(--muted);">ID: ${cat.id}</p>
+                  <p style="font-size:0.7em;color:var(--muted);">Рождён: ${new Date(cat.birthDate).toLocaleDateString()}</p>
+                  ${cat.parents.length>0?`<p style="font-size:0.75em;">Родители: ${cat.parents.join(', ')}</p>`:''}
+                </div>`;
+                    document.getElementById('modal-overlay').style.display = 'flex';
+                }
+
+                closeModal() {
+                    document.getElementById('modal-overlay').style.display = 'none';
+                }
+
+                updateHeader() {
+                    document.getElementById('coins-display').textContent = this.coins.toLocaleString();
+                    document.getElementById('gems-display').textContent = this.gems.toLocaleString();
+                }
+
+                async renderAdminStats() {
+                    if (!this.isAdmin) return;
+                    const statsDiv = document.getElementById('admin-stats');
+                    if (!statsDiv) return;
+                    try {
+                        const [playersSnap, catsSnap, marketSnap] = await Promise.all([
+                            db.collection('players').get(),
+                            db.collection('cats').get(),
+                            db.collection('cats').where('forSale', '==', true).get(),
+                        ]);
+                        statsDiv.innerHTML = `
+                  <div class="stat-row"><span>Всего игроков:</span><span>${playersSnap.size}</span></div>
+                  <div class="stat-row"><span>Всего котов:</span><span>${catsSnap.size}</span></div>
+                  <div class="stat-row"><span>Котов на рынке:</span><span>${marketSnap.size}</span></div>
+                  <div class="stat-row"><span>Админ:</span><span>${this.currentUser?.email||'?'}</span></div>
+                `;
+                    } catch (e) {
+                        statsDiv.innerHTML = '<p style="color:#ff6b6b;">Ошибка загрузки статистики</p>';
+                    }
+                }
+
+                showNotification(message, type = 'info') {
+                    const container = document.getElementById('notification-container');
+                    const notif = document.createElement('div');
+                    notif.className = `notification ${type}`;
+                    notif.textContent = message;
+                    container.appendChild(notif);
+                    setTimeout(() => {
+                        notif.style.opacity = '0';
+                        notif.style.transform = 'translateX(120%)';
+                        notif.style.transition = '0.3s ease';
+                        setTimeout(() => notif.remove(), 350);
+                    }, 2800);
+                }
+            }
+
+            // ============ INITIALIZE ============
+            const game = new GameManager();
+            window._game = game;
+
+            // Auth mode tracking
+            game.isLoginMode = true;
+            const origHandleAuth = game.handleAuth.bind(game);
+            game.handleAuth = function() {
+                document.getElementById('auth-error').textContent = '';
+                const email = document.getElementById('auth-email').value.trim();
+                const pass = document.getElementById('auth-pass').value.trim();
+                const name = document.getElementById('auth-name')?.value.trim();
+                const errorEl = document.getElementById('auth-error');
+                if (!email || !pass) { errorEl.textContent = 'Заполните все поля';
+                    return; }
+                if (pass.length < 6) { errorEl.textContent = 'Пароль минимум 6 символов';
+                    return; }
+                if (!this.isLoginMode && !name) { errorEl.textContent = 'Введите никнейм';
+                    return; }
+                document.getElementById('auth-loading').style.display = 'block';
+                document.getElementById('auth-form').style.display = 'none';
+                const action = this.isLoginMode ?
+                    auth.signInWithEmailAndPassword(email, pass) :
+                    auth.createUserWithEmailAndPassword(email, pass).then(r => r.user.updateProfile({
+                        displayName: name }).then(() => r));
+                action.then(() => {
+                    document.getElementById('auth-loading').style.display = 'none';
+                    document.getElementById('auth-form').style.display = 'block';
+                    document.getElementById('auth-pass').value = '';
+                }).catch(err => {
+                    document.getElementById('auth-loading').style.display = 'none';
+                    document.getElementById('auth-form').style.display = 'block';
+                    errorEl.textContent = game.translateAuthError(err.code);
+                });
+            };
+            const origToggle = game.toggleAuthMode.bind(game);
+            game.toggleAuthMode = function() {
+                this.isLoginMode = !this.isLoginMode;
+                document.getElementById('auth-submit-btn').textContent = this.isLoginMode ? 'Войти' :
+                    'Зарегистрироваться';
+                document.getElementById('auth-toggle-text').innerHTML = this.isLoginMode ?
+                    'Нет аккаунта? <span id="toggle-auth-mode">Зарегистрироваться</span>' :
+                    'Уже есть аккаунт? <span id="toggle-auth-mode">Войти</span>';
+                document.getElementById('name-group').style.display = this.isLoginMode ? 'none' : 'block';
+                document.getElementById('toggle-auth-mode').addEventListener('click', () => game.toggleAuthMode());
+                document.getElementById('auth-error').textContent = '';
+            };
+
+            // Expose for onclick handlers
+            window._game = game;
+            window.closeModal = () => game.closeModal();
+
+            console.log('🐱 Cat Genetics Empire initialized!');
+            console.log('🧬 Genetics engine ready with', Object.keys(game.genetics.loci).length, 'gene loci');
+            console.log('🔥 Firebase connected:', firebaseConfig.projectId);
+            console.log('👑 Admin emails:', game.adminEmails.join(', '));
+            console.log('📊 Features: Breeding, Market, Leaderboard, Achievements, Admin Panel, Real-time sync');
+        })();
+    </script>
 </body>
 </html>
