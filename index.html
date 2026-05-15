@@ -44,7 +44,7 @@
             border-radius: 30px;
             border: none;
             font-weight: 700;
-            font-size: 1em;
+            font-size: 1.2em;
             cursor: pointer;
             margin: 6px 4px;
             display: inline-flex;
@@ -54,6 +54,8 @@
             background: #2a2a4a;
             color: #fff;
             transition: 0.2s;
+            min-width: 44px;
+            min-height: 44px;
         }
         .btn-accent { background: var(--accent); }
         .btn-gold { background: var(--gold); color: #000; }
@@ -159,11 +161,10 @@
             padding: 20px; max-width: 350px; width: 90%;
             text-align: center;
         }
-        .rules-btn {
+        .close-modal-btn {
             position: absolute; top:10px; right:10px;
-            background: var(--accent); border:none; color:white;
-            border-radius:50%; width:35px; height:35px;
-            font-weight:bold; font-size:1.2em; z-index:10;
+            background: none; border:none; color:var(--accent);
+            font-size: 1.8em; cursor:pointer;
         }
     </style>
 </head>
@@ -172,15 +173,15 @@
         <!-- Экран авторизации -->
         <div id="auth-screen">
             <h2 style="text-align:center; margin-bottom:16px;">⚒️ Gold Rush</h2>
-            <input type="email" id="email" class="input" placeholder="Email">
-            <input type="password" id="password" class="input" placeholder="Пароль">
+            <input type="email" id="email" class="input" placeholder="📧 Email">
+            <input type="password" id="password" class="input" placeholder="🔒 Пароль">
             <div id="name-group" style="display:none;">
-                <input type="text" id="username" class="input" placeholder="Никнейм">
+                <input type="text" id="username" class="input" placeholder="😺 Никнейм">
             </div>
             <p id="auth-error" style="color:#ff6b6b; font-size:0.8em; margin:4px 0;"></p>
-            <button class="btn btn-accent" id="auth-btn" style="width:100%;">Войти</button>
+            <button class="btn btn-accent" id="auth-btn" style="width:100%;">🔑 Войти</button>
             <p style="text-align:center; margin-top:12px; font-size:0.9em;">
-                <span id="toggle-mode" style="color:var(--accent); cursor:pointer;">Регистрация</span>
+                <span id="toggle-mode" style="color:var(--accent); cursor:pointer;">📝 Регистрация</span>
             </p>
         </div>
 
@@ -188,27 +189,27 @@
         <div id="main-screen" class="hidden">
             <div class="flex-between mb-2">
                 <span id="user-info" style="font-weight:600;"></span>
-                <button class="btn btn-sm btn-outline" id="logout-btn">Выйти</button>
+                <button class="btn btn-sm btn-outline" id="logout-btn">🚪 Выйти</button>
             </div>
 
-            <!-- Главное меню (публичное лобби + приватные игры) -->
+            <!-- Главное меню -->
             <div id="menu-view">
                 <!-- Публичная игра -->
                 <div class="public-lobby" id="public-lobby-info">
                     <h3>🌍 Публичная игра</h3>
-                    <p id="lobby-players-count">Загрузка...</p>
+                    <p id="lobby-players-count">👥 Загрузка...</p>
                     <div id="lobby-players-list" class="flex-row" style="justify-content:center;"></div>
-                    <button class="btn btn-gold" id="join-public-btn">Войти в публичную игру</button>
+                    <button class="btn btn-gold" id="join-public-btn">⚔️ Войти в публичную игру</button>
                     <p id="lobby-message" style="color:var(--muted); font-size:0.8em;"></p>
                 </div>
 
                 <!-- Приватные игры -->
                 <div class="private-section">
                     <h3>🔒 Приватная игра</h3>
-                    <button class="btn btn-accent" id="create-private-btn" style="width:100%;">Создать приватную игру</button>
+                    <button class="btn btn-accent" id="create-private-btn">➕ Создать</button>
                     <div style="margin:12px 0;">
-                        <input type="text" id="join-code" class="input" placeholder="Код приватной игры" style="text-align:center; text-transform:uppercase;">
-                        <button class="btn btn-info" id="join-private-btn" style="width:100%;">Присоединиться</button>
+                        <input type="text" id="join-code" class="input" placeholder="🔢 Код игры" style="text-align:center; text-transform:uppercase;">
+                        <button class="btn btn-info" id="join-private-btn">🔍 Присоединиться</button>
                     </div>
                     <div id="private-games-list" style="font-size:0.85em; color:var(--muted);"></div>
                 </div>
@@ -218,15 +219,15 @@
 
             <!-- Лобби приватной игры -->
             <div id="private-lobby-view" class="hidden">
-                <h3>Приватная игра <span id="private-lobby-code"></span></h3>
+                <h3>🔒 Приватная игра <span id="private-lobby-code"></span></h3>
                 <div id="private-lobby-players"></div>
-                <button class="btn btn-accent" id="private-start-btn" style="display:none;">Начать игру</button>
+                <button class="btn btn-accent" id="private-start-btn" style="display:none;">▶️ Начать игру</button>
                 <p id="private-lobby-status" style="color:var(--muted);"></p>
             </div>
 
-            <!-- Игровой процесс (общий для публичных и приватных) -->
+            <!-- Игровой процесс -->
             <div id="game-view" class="hidden" style="position:relative;">
-                <button class="rules-btn" id="game-rules-btn">?</button>
+                <button class="close-modal-btn" id="game-rules-btn" style="position:absolute; top:5px; right:5px; z-index:10;">❓</button>
                 <div class="flex-between">
                     <span id="game-status"></span>
                 </div>
@@ -238,14 +239,17 @@
             <!-- Админ-панель -->
             <div id="admin-view" class="hidden mt-2">
                 <h4>⚙️ Админ</h4>
-                <button class="btn btn-sm" id="admin-reset-public">Сбросить публичную игру</button>
+                <button class="btn btn-sm" id="admin-reset-public">🔄 Сбросить публичную игру</button>
             </div>
         </div>
     </div>
 
     <div id="notification" class="hidden"></div>
+
+    <!-- Модальное окно правил -->
     <div id="rules-modal" class="modal-overlay hidden">
-        <div class="modal">
+        <div class="modal" style="position:relative;">
+            <button class="close-modal-btn" onclick="document.getElementById('rules-modal').classList.add('hidden')">❌</button>
             <h2>📖 Правила игры</h2>
             <p>⚒️ <b>Цель:</b> накопить 100 золота или остаться последним выжившим.</p>
             <p>🪙 <b>Клетки:</b> золото (+10💰), ловушки (-15❤️), монстры (-20❤️, можно убить оружием).</p>
@@ -253,7 +257,7 @@
             <p>🧪 <b>Зелье:</b> +30 HP (тратится).</p>
             <p>⚔️ <b>Атака:</b> бьёт соседа (-20 HP).</p>
             <p>🔄 Случайные события: новое золото или ловушка каждый ход (30%).</p>
-            <button class="btn btn-accent" onclick="document.getElementById('rules-modal').classList.add('hidden')">Понятно</button>
+            <button class="btn btn-accent" onclick="document.getElementById('rules-modal').classList.add('hidden')">✅ Понятно</button>
         </div>
     </div>
 
@@ -275,12 +279,12 @@
             const BOARD_SIZE = 6;
 
             let currentUser = null;
-            let currentGameRef = null; // ссылка на текущую игру (публичную или приватную)
-            let currentGameId = null; // ID документа
+            let currentGameRef = null;
+            let currentGameId = null;
             let gameUnsubscribe = null;
             let isAdmin = false;
 
-            // DOM
+            // DOM элементы
             const authScreen = document.getElementById('auth-screen');
             const mainScreen = document.getElementById('main-screen');
             const menuView = document.getElementById('menu-view');
@@ -316,11 +320,12 @@
                 }
             });
 
+            // Переключение режимов
             let isLogin = true;
             document.getElementById('toggle-mode').onclick = () => {
                 isLogin = !isLogin;
-                document.getElementById('auth-btn').textContent = isLogin ? 'Войти' : 'Зарегистрироваться';
-                document.getElementById('toggle-mode').textContent = isLogin ? 'Регистрация' : 'Войти';
+                document.getElementById('auth-btn').textContent = isLogin ? '🔑 Войти' : '📝 Зарегистрироваться';
+                document.getElementById('toggle-mode').textContent = isLogin ? '📝 Регистрация' : '🔑 Войти';
                 document.getElementById('name-group').style.display = isLogin ? 'none' : 'block';
             };
             document.getElementById('auth-btn').onclick = () => {
@@ -335,65 +340,44 @@
                 action.catch(e => { errorEl.textContent = e.message; });
             };
 
-            // Загрузка главного меню
+            // Загрузка меню
             async function loadMainMenu() {
                 menuView.classList.remove('hidden');
                 privateLobbyView.classList.add('hidden');
                 gameView.classList.add('hidden');
                 if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
 
-                // Инициализация публичной игры
                 const publicRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
                 const publicDoc = await publicRef.get();
                 if (!publicDoc.exists) {
-                    await publicRef.set({
-                        status: 'waiting', players: [], board: null, currentTurn: 0, gameOver: false
-                    });
+                    await publicRef.set({ status:'waiting', players:[], board:null, currentTurn:0, gameOver:false });
                 } else {
                     const data = publicDoc.data();
-                    if (data.status === 'finished') {
-                        await publicRef.update({ status: 'waiting', players: [], board: null, currentTurn: 0, gameOver: false });
-                    }
+                    if (data.status === 'finished') await publicRef.update({ status:'waiting', players:[], board:null, currentTurn:0, gameOver:false });
                 }
-                // Подписка на публичную игру (только для отображения в меню)
-                if (gameUnsubscribe) gameUnsubscribe();
                 gameUnsubscribe = publicRef.onSnapshot(snap => {
                     const game = snap.data();
                     if (!game) return;
                     updatePublicLobbyUI(game);
                 });
-
-                // Загружаем список приватных игр
                 loadPrivateGamesList();
             }
 
             function updatePublicLobbyUI(game) {
-                const countEl = document.getElementById('lobby-players-count');
-                const listEl = document.getElementById('lobby-players-list');
+                document.getElementById('lobby-players-count').textContent = `👥 ${game.players.length}/3`;
+                document.getElementById('lobby-players-list').innerHTML = game.players.map(p => `<span class="player-card">${p.name}</span>`).join('');
+                const alreadyIn = game.players.some(p => p.uid === currentUser?.uid);
                 const joinBtn = document.getElementById('join-public-btn');
                 const msgEl = document.getElementById('lobby-message');
-                countEl.textContent = `Игроков: ${game.players.length}/3`;
-                listEl.innerHTML = game.players.map(p => `<span class="player-card">${p.name}</span>`).join('');
-                const alreadyIn = game.players.some(p => p.uid === currentUser?.uid);
                 if (game.status === 'waiting') {
-                    if (alreadyIn) {
-                        joinBtn.style.display = 'none';
-                        msgEl.textContent = 'Вы уже в лобби';
-                    } else if (game.players.length >= 3) {
-                        joinBtn.style.display = 'none';
-                        msgEl.textContent = 'Игра заполнена';
-                    } else {
-                        joinBtn.style.display = 'inline-block';
-                        joinBtn.textContent = 'Войти в публичную игру';
-                        msgEl.textContent = '';
-                    }
+                    joinBtn.style.display = alreadyIn ? 'none' : (game.players.length >= 3 ? 'none' : 'inline-block');
+                    msgEl.textContent = alreadyIn ? 'Вы уже в лобби' : (game.players.length >= 3 ? 'Игра заполнена' : '');
                 } else {
                     joinBtn.style.display = 'none';
                     msgEl.textContent = alreadyIn ? 'Идёт игра!' : 'Идёт игра';
                 }
             }
 
-            // Присоединение к публичной игре
             document.getElementById('join-public-btn').addEventListener('click', async () => {
                 if (!currentUser) return;
                 const publicRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
@@ -404,49 +388,38 @@
                         if (game.status !== 'waiting') throw new Error('Игра уже началась');
                         if (game.players.length >= 3) throw new Error('Нет мест');
                         if (game.players.some(p => p.uid === currentUser.uid)) throw new Error('Вы уже в игре');
-                        const newPlayer = {
+                        game.players.push({
                             uid: currentUser.uid,
                             email: currentUser.email,
                             name: currentUser.displayName || 'Игрок',
                             hp: 100, gold: 0, items: ['potion'],
                             position: { x: game.players.length, y: game.players.length }
-                        };
-                        game.players.push(newPlayer);
+                        });
                         trans.update(publicRef, { players: game.players });
                     });
                     notify('Вы в публичной игре!');
                 } catch (e) { notify(e.message, 'error'); }
             });
 
-            // Приватные игры
             async function loadPrivateGamesList() {
                 const snap = await db.collection('private_games').where('status', '==', 'waiting').limit(5).get();
                 const listEl = document.getElementById('private-games-list');
-                if (snap.empty) {
-                    listEl.innerHTML = 'Нет активных приватных игр';
-                } else {
-                    listEl.innerHTML = snap.docs.map(d => {
-                        const g = d.data();
-                        return `<div>Игра ${g.code} (${g.players.length}/3)</div>`;
-                    }).join('');
-                }
+                listEl.innerHTML = snap.empty ? 'Нет активных приватных игр' : snap.docs.map(d => {
+                    const g = d.data();
+                    return `<div>🔒 ${g.code} (${g.players.length}/3)</div>`;
+                }).join('');
             }
 
             document.getElementById('create-private-btn').addEventListener('click', async () => {
                 if (!currentUser) return;
                 const code = Math.random().toString(36).substring(2,6).toUpperCase();
                 const gameData = {
-                    code: code,
-                    players: [{
+                    code, players: [{
                         uid: currentUser.uid, email: currentUser.email,
                         name: currentUser.displayName || 'Игрок',
-                        hp: 100, gold: 0, items: ['potion'],
-                        position: { x: 0, y: 0 }
+                        hp:100, gold:0, items:['potion'], position:{x:0,y:0}
                     }],
-                    status: 'waiting',
-                    board: null,
-                    currentTurn: 0,
-                    gameOver: false,
+                    status:'waiting', board:null, currentTurn:0, gameOver:false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 const docRef = await db.collection('private_games').add(gameData);
@@ -464,21 +437,17 @@
                 const game = doc.data();
                 if (game.players.length >= 3) return notify('Игра заполнена', 'error');
                 if (game.players.some(p => p.uid === currentUser.uid)) {
-                    currentGameRef = doc.ref;
-                    currentGameId = doc.id;
-                    enterPrivateLobby(doc.id, code);
-                    return;
+                    currentGameRef = doc.ref; currentGameId = doc.id;
+                    enterPrivateLobby(doc.id, code); return;
                 }
                 await doc.ref.update({
                     players: firebase.firestore.FieldValue.arrayUnion({
                         uid: currentUser.uid, email: currentUser.email,
                         name: currentUser.displayName || 'Игрок',
-                        hp: 100, gold: 0, items: ['potion'],
-                        position: { x: BOARD_SIZE-1, y: BOARD_SIZE-1 }
+                        hp:100, gold:0, items:['potion'], position:{x:BOARD_SIZE-1, y:BOARD_SIZE-1}
                     })
                 });
-                currentGameRef = doc.ref;
-                currentGameId = doc.id;
+                currentGameRef = doc.ref; currentGameId = doc.id;
                 enterPrivateLobby(doc.id, code);
             });
 
@@ -498,16 +467,14 @@
             }
 
             function updatePrivateLobby(game) {
-                const div = document.getElementById('private-lobby-players');
-                div.innerHTML = game.players.map(p => `<div class="player-card">${p.name} ${p.uid===currentUser.uid?'(вы)':''}</div>`).join('');
+                document.getElementById('private-lobby-players').innerHTML = game.players.map(p =>
+                    `<div class="player-card">${p.name} ${p.uid===currentUser.uid?'(вы)':''}</div>`).join('');
                 const isCreator = game.players[0]?.uid === currentUser.uid;
                 document.getElementById('private-start-btn').style.display = (isCreator && game.players.length===3) ? 'block' : 'none';
                 document.getElementById('private-lobby-status').textContent = game.players.length < 3 ? 'Ожидание игроков...' : 'Можно начинать!';
                 document.getElementById('private-start-btn').onclick = async () => {
                     await db.collection('private_games').doc(currentGameId).update({
-                        status: 'active',
-                        board: generateRandomBoard(),
-                        currentTurn: 0
+                        status:'active', board: generateRandomBoard(), currentTurn:0
                     });
                 };
             }
@@ -525,7 +492,6 @@
                 });
             }
 
-            // Общие функции игры
             function generateRandomBoard() {
                 const board = [];
                 for (let y=0; y<BOARD_SIZE; y++) {
@@ -545,14 +511,18 @@
             function renderGame(game) {
                 const me = game.players.find(p => p.uid === currentUser.uid);
                 if (!me) {
-                    document.getElementById('game-status').textContent = 'Наблюдение';
+                    document.getElementById('game-status').textContent = '👀 Наблюдение';
+                    document.getElementById('player-stats').innerHTML = '';
+                    document.getElementById('board-container').innerHTML = '';
+                    document.getElementById('controls').innerHTML = '';
                     return;
                 }
-                document.getElementById('game-status').textContent = game.gameOver ? '🏁 Игра окончена!' : `Ход: ${game.players[game.currentTurn]?.name || '...'}`;
+                document.getElementById('game-status').textContent = game.gameOver ? '🏁 Игра окончена!' : `🎲 Ход: ${game.players[game.currentTurn]?.name || '...'}`;
                 const statsDiv = document.getElementById('player-stats');
                 statsDiv.innerHTML = game.players.map(p => `
                     <div style="flex:1; text-align:center;">
-                        <strong>${p.name}</strong><br> ❤️${p.hp} 💰${p.gold}
+                        <strong>${p.name}</strong><br>
+                        ❤️${p.hp} 💰${p.gold}
                         <div class="hp-bar" style="margin:4px auto;"><div class="hp-fill" style="width:${p.hp}%;"></div></div>
                     </div>`).join('');
 
@@ -602,7 +572,6 @@
                 }
             }
 
-            // Игровые действия
             window.movePlayer = async (dir) => {
                 if (!currentGameRef) return;
                 try {
@@ -689,9 +658,7 @@
 
             document.getElementById('admin-reset-public')?.addEventListener('click', async () => {
                 if (!isAdmin) return;
-                await db.collection('public_games').doc(PUBLIC_GAME_ID).update({
-                    status:'waiting', players:[], board:null, currentTurn:0, gameOver:false
-                });
+                await db.collection('public_games').doc(PUBLIC_GAME_ID).update({ status:'waiting', players:[], board:null, currentTurn:0, gameOver:false });
                 notify('Публичная игра сброшена');
             });
 
