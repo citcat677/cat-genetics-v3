@@ -2,102 +2,245 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Rush: битва за сокровища</title>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>⚒️ Gold Rush Mobile</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
+    </script>
     <style>
-        :root { --bg:#1a1a2e; --panel:#16213e; --accent:#e94560; --gold:#f0c040; --text:#e0e0e0; --muted:#a0a0b8; --cell-size:70px; }
+        :root {
+            --bg: #1a1a2e;
+            --panel: #16213e;
+            --accent: #e94560;
+            --gold: #f0c040;
+            --text: #e0e0e0;
+            --muted: #a0a0b8;
+            --cell-size: min(18vw, 70px);
+            --radius: 16px;
+        }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-        #auth-screen, #main-screen { width:100%; max-width:900px; }
-        .auth-card, .panel { background:var(--panel); border-radius:16px; padding:30px; box-shadow:0 8px 30px rgba(0,0,0,0.5); }
-        .btn { padding:10px 20px; border-radius:25px; border:none; cursor:pointer; font-weight:600; margin:5px; transition:0.2s; }
-        .btn-accent { background:var(--accent); color:#fff; }
-        .btn-gold { background:var(--gold); color:#000; }
-        .btn-outline { background:transparent; border:2px solid var(--accent); color:var(--accent); }
-        .input { width:100%; padding:12px; margin:8px 0; border-radius:8px; border:1px solid #333; background:#1e1e38; color:#fff; }
-        .grid-3cols { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-        .lobby-player { background:#0f3460; padding:12px; border-radius:10px; text-align:center; }
-        .board { display:grid; gap:3px; justify-content:center; margin:20px 0; }
-        .cell { width:var(--cell-size); height:var(--cell-size); background:#2a2a4a; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:1.8em; position:relative; }
-        .cell.gold { background:#4a3f1e; } .cell.trap { background:#5e1e1e; } .cell.monster { background:#3e1e5e; }
-        .player-token { position:absolute; width:30px; height:30px; border-radius:50%; border:2px solid white; font-size:1.2em; display:flex; align-items:center; justify-content:center; }
-        .active-turn { animation:pulse 1s infinite; }
-        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
-        .hp-bar { height:8px; background:#444; border-radius:4px; margin:4px 0; }
-        .hp-fill { height:100%; border-radius:4px; background:#4caf84; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+            touch-action: manipulation;
+        }
+        #app {
+            width: 100%;
+            max-width: 500px;
+            background: var(--panel);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-top: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        .btn {
+            padding: 12px 18px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 6px 4px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #2a2a4a;
+            color: #fff;
+        }
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-outline { background: transparent; border: 2px solid var(--accent); color: var(--accent); }
+        .btn-sm { padding: 8px 14px; font-size: 0.85em; }
+        .btn-copy { background: #4a90d9; color: #fff; }
+        .input {
+            width: 100%;
+            padding: 14px 16px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border: 1px solid #333;
+            background: #1e1e38;
+            color: #fff;
+            font-size: 1em;
+        }
+        .code-display {
+            background: #0a0a1e;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 2em;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: var(--gold);
+            margin: 12px 0;
+            border: 2px dashed var(--gold);
+            word-break: break-all;
+        }
+        .board {
+            display: grid;
+            gap: 3px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background: #2a2a4a;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            position: relative;
+        }
+        .cell.gold { background: #4a3f1e; }
+        .cell.trap { background: #5e1e1e; }
+        .cell.monster { background: #3e1e5e; }
+        .player-token {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid white;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent);
+            color: #fff;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+        }
+        .active-turn { animation: pulse 0.8s infinite; }
+        @keyframes pulse { 0%,100%{transform: scale(1)} 50%{transform: scale(1.25)} }
+        .player-card {
+            background: #0f3460;
+            padding: 8px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        .hp-bar { width: 80px; height: 8px; background: #444; border-radius: 4px; overflow: hidden; }
+        .hp-fill { height: 100%; background: #4caf84; }
+        .flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .mt-2 { margin-top: 10px; }
+        .mb-2 { margin-bottom: 10px; }
+        .text-center { text-align: center; }
+        .hidden { display: none; }
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 1000;
+            font-weight: 600;
+            transition: 0.3s;
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
-    <div id="auth-screen">
-        <div class="auth-card">
-            <h2>⚒️ Gold Rush: битва за сокровища</h2>
-            <div id="auth-form">
-                <input type="email" id="email" class="input" placeholder="Email">
-                <input type="password" id="password" class="input" placeholder="Пароль">
-                <div id="name-group" style="display:none;"><input type="text" id="username" class="input" placeholder="Ник"></div>
-                <p id="auth-error" style="color:#ff6b6b;font-size:0.8em;"></p>
-                <button class="btn btn-accent" id="auth-btn">Войти</button>
-                <p style="margin-top:10px;"><span id="toggle-mode" style="color:var(--accent);cursor:pointer;">Регистрация</span></p>
+    <div id="app">
+        <!-- Экран авторизации -->
+        <div id="auth-screen">
+            <h2 style="text-align:center; margin-bottom:16px;">⚒️ Gold Rush</h2>
+            <input type="email" id="email" class="input" placeholder="Email">
+            <input type="password" id="password" class="input" placeholder="Пароль">
+            <div id="name-group" style="display:none;">
+                <input type="text" id="username" class="input" placeholder="Никнейм">
             </div>
+            <p id="auth-error" style="color:#ff6b6b; font-size:0.8em; margin:4px 0;"></p>
+            <button class="btn btn-accent" id="auth-btn" style="width:100%;">Войти</button>
+            <p style="text-align:center; margin-top:12px; font-size:0.9em;">
+                <span id="toggle-mode" style="color:var(--accent); cursor:pointer;">Регистрация</span>
+            </p>
         </div>
-    </div>
 
-    <div id="main-screen" style="display:none;">
-        <div class="panel">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>🏆 Золотая лихорадка</h2>
-                <div>
-                    <span id="user-info" style="margin-right:20px;"></span>
-                    <button class="btn btn-outline" id="logout-btn">Выйти</button>
-                </div>
+        <!-- Основной интерфейс (после входа) -->
+        <div id="main-screen" class="hidden">
+            <div class="flex-between mb-2">
+                <span id="user-info" style="font-weight:600;"></span>
+                <button class="btn btn-sm btn-outline" id="logout-btn">Выйти</button>
             </div>
+
+            <!-- Меню -->
             <div id="menu-view">
-                <button class="btn btn-gold" id="create-game-btn">➕ Создать игру</button>
-                <div style="margin:15px 0;">
-                    <input type="text" id="join-code" class="input" placeholder="Код игры" style="width:auto; display:inline;">
-                    <button class="btn btn-accent" id="join-game-btn">Присоединиться</button>
+                <button class="btn btn-gold" id="create-game-btn" style="width:100%; font-size:1.2em;">➕ Создать игру</button>
+                <div style="margin-top:16px;">
+                    <input type="text" id="join-code" class="input" placeholder="Введите код игры" style="text-align:center; text-transform:uppercase;">
+                    <button class="btn btn-accent" id="join-game-btn" style="width:100%;">Присоединиться</button>
                 </div>
-                <div id="active-games-list" style="margin-top:20px;"></div>
+                <div id="active-games-list" style="margin-top:16px; font-size:0.85em; color:var(--muted);"></div>
             </div>
-            <div id="lobby-view" style="display:none;">
-                <h3>Лобби игры <span id="lobby-code"></span></h3>
-                <div class="grid-3cols" id="lobby-players"></div>
-                <button class="btn btn-accent" id="start-game-btn" style="display:none;">Начать игру</button>
-                <p id="lobby-status"></p>
+
+            <!-- Лобби / ожидание игроков -->
+            <div id="lobby-view" class="hidden">
+                <h3>Код игры:</h3>
+                <div class="code-display" id="lobby-code"></div>
+                <button class="btn btn-copy btn-sm" id="copy-code-btn">📋 Скопировать код</button>
+                <div id="lobby-players" class="mt-2"></div>
+                <button class="btn btn-accent" id="start-game-btn" style="width:100%; display:none;">Начать игру</button>
+                <p id="lobby-status" style="color:var(--muted); text-align:center;"></p>
             </div>
-            <div id="game-view" style="display:none;">
-                <div style="display:flex; justify-content:space-between;">
-                    <div id="game-status"></div>
-                    <div id="player-stats"></div>
+
+            <!-- Игровой процесс -->
+            <div id="game-view" class="hidden">
+                <div class="flex-between">
+                    <span id="game-status"></span>
                 </div>
-                <div id="board-container"></div>
-                <div id="controls" style="text-align:center; margin-top:15px;"></div>
+                <div id="player-stats" class="flex-row" style="justify-content: space-around;"></div>
+                <div id="board-container" class="text-center"></div>
+                <div id="controls" class="text-center" style="margin-top:12px;"></div>
             </div>
-            <div id="admin-view" style="display:none;"></div>
+
+            <!-- Админ-панель (видна только админу) -->
+            <div id="admin-view" class="hidden mt-2">
+                <h4>⚙️ Админ</h4>
+                <button class="btn btn-sm" id="admin-delete-games">Удалить все игры</button>
+                <span id="admin-result" style="font-size:0.8em;"></span>
+            </div>
         </div>
     </div>
+    <div id="notification" class="hidden"></div>
 
     <script>
         (function() {
-            // Firebase
+            // Инициализация Firebase – НОВЫЙ КОНФИГ
             firebase.initializeApp({
-                apiKey: "AIzaSyC0b58JT-x3te0LZmWQv5qA2mzG026ycK8",
-                authDomain: "cat-games-v1.firebaseapp.com",
-                projectId: "cat-games-v1",
-                storageBucket: "cat-games-v1.firebasestorage.app",
-                messagingSenderId: "357590792729",
-                appId: "1:357590792729:web:7c40d851c8f09d5b388888"
+                apiKey: "AIzaSyDS1y5XkbXMGEFDm6pcvgOLXXdcWlCtjBQ",
+                authDomain: "cat-genetics-v12.firebaseapp.com",
+                projectId: "cat-genetics-v12",
+                storageBucket: "cat-genetics-v12.firebasestorage.app",
+                messagingSenderId: "91251979492",
+                appId: "1:91251979492:web:c7f155914900e8a1b528f1",
+                measurementId: "G-TZJ3HZR01B"
             });
             const auth = firebase.auth();
             const db = firebase.firestore();
 
-            // Состояние приложения
+            // Глобальные переменные
             let currentUser = null;
             let currentGameId = null;
-            let gameListener = null;
+            let gameUnsubscribe = null;
             let isAdmin = false;
             const BOARD_SIZE = 6;
 
@@ -109,25 +252,38 @@
             const gameView = document.getElementById('game-view');
             const adminView = document.getElementById('admin-view');
 
-            // Инициализация авторизации
+            // Уведомления
+            function notify(msg, type = 'info') {
+                const el = document.getElementById('notification');
+                el.textContent = msg;
+                el.className = '';
+                el.style.background = type === 'error' ? '#e94560' : '#4caf84';
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 2500);
+            }
+
+            // Обработчик авторизации
             auth.onAuthStateChanged(user => {
                 if (user) {
                     currentUser = user;
                     isAdmin = (user.email === 'katya2013sara1981@gmail.com');
-                    authScreen.style.display = 'none';
-                    mainScreen.style.display = 'block';
-                    document.getElementById('user-info').textContent = `👤 ${user.displayName || user.email}`;
+                    authScreen.classList.add('hidden');
+                    mainScreen.classList.remove('hidden');
+                    document.getElementById('user-info').textContent = `👤 ${user.displayName || user.email.split('@')[0]}`;
                     document.getElementById('logout-btn').onclick = () => auth.signOut();
+                    // Показать админку если админ
+                    if (isAdmin) adminView.classList.remove('hidden');
+                    else adminView.classList.add('hidden');
                     loadMainMenu();
                 } else {
                     currentUser = null;
-                    authScreen.style.display = 'flex';
-                    mainScreen.style.display = 'none';
-                    detachGameListener();
+                    authScreen.classList.remove('hidden');
+                    mainScreen.classList.add('hidden');
+                    if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
                 }
             });
 
-            // Переключение режима Вход/Регистрация
+            // Переключение режимов авторизации
             let isLogin = true;
             document.getElementById('toggle-mode').onclick = () => {
                 isLogin = !isLogin;
@@ -136,39 +292,46 @@
                 document.getElementById('name-group').style.display = isLogin ? 'none' : 'block';
                 document.getElementById('auth-error').textContent = '';
             };
+
             document.getElementById('auth-btn').onclick = () => {
                 const email = document.getElementById('email').value.trim();
                 const password = document.getElementById('password').value.trim();
                 const username = document.getElementById('username')?.value.trim();
                 const errorEl = document.getElementById('auth-error');
                 if (!email || !password) { errorEl.textContent = 'Введите email и пароль'; return; }
-                if (password.length < 6) { errorEl.textContent = 'Пароль минимум 6 символов'; return; }
-                const action = isLogin ? auth.signInWithEmailAndPassword(email, password) :
-                    auth.createUserWithEmailAndPassword(email, password).then(r => {
-                        return r.user.updateProfile({ displayName: username || email.split('@')[0] });
-                    });
+                if (password.length < 6) { errorEl.textContent = 'Минимум 6 символов'; return; }
+                const action = isLogin ?
+                    auth.signInWithEmailAndPassword(email, password) :
+                    auth.createUserWithEmailAndPassword(email, password).then(r =>
+                        r.user.updateProfile({ displayName: username || email.split('@')[0] })
+                    );
                 action.catch(e => { errorEl.textContent = e.message; });
             };
 
             // Загрузка главного меню
             async function loadMainMenu() {
-                menuView.style.display = 'block';
-                lobbyView.style.display = 'none';
-                gameView.style.display = 'none';
-                adminView.style.display = isAdmin ? 'block' : 'none';
-                if (isAdmin) renderAdminPanel();
-                const activeGamesSnap = await db.collection('games').where('status', '==', 'waiting').limit(5).get();
-                const gamesHtml = activeGamesSnap.docs.map(d => {
-                    const g = d.data();
-                    return `<div>Игра #${d.id.slice(-4)} (${g.players.length}/3) код: ${g.code}</div>`;
-                }).join('');
-                document.getElementById('active-games-list').innerHTML = gamesHtml || 'Нет активных игр';
+                menuView.classList.remove('hidden');
+                lobbyView.classList.add('hidden');
+                gameView.classList.add('hidden');
+                if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
+                // Показать активные игры
+                const snap = await db.collection('games').where('status', '==', 'waiting').limit(5).get();
+                const list = document.getElementById('active-games-list');
+                if (snap.empty) {
+                    list.innerHTML = 'Нет активных игр';
+                } else {
+                    list.innerHTML = snap.docs.map(d => {
+                        const g = d.data();
+                        return `<div>Игра #${d.id.slice(-4)} (${g.players.length}/3) ${g.code}</div>`;
+                    }).join('');
+                }
             }
 
             // Создание игры
             document.getElementById('create-game-btn').onclick = async () => {
+                if (!currentUser) return;
                 const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-                const gameRef = await db.collection('games').add({
+                const gameData = {
                     code: code,
                     players: [{
                         uid: currentUser.uid,
@@ -176,7 +339,7 @@
                         name: currentUser.displayName || 'Игрок',
                         hp: 100,
                         gold: 0,
-                        items: [],
+                        items: ['potion'],
                         position: { x: 0, y: 0 }
                     }],
                     status: 'waiting',
@@ -184,25 +347,28 @@
                     board: null,
                     gameOver: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                currentGameId = gameRef.id;
-                joinLobby(gameRef.id);
+                };
+                const docRef = await db.collection('games').add(gameData);
+                currentGameId = docRef.id;
+                enterLobby(docRef.id, code);
             };
 
-            // Присоединение по коду
+            // Присоединение к игре
             document.getElementById('join-game-btn').onclick = async () => {
                 const code = document.getElementById('join-code').value.trim().toUpperCase();
-                if (!code) return alert('Введите код');
+                if (!code) return notify('Введите код', 'error');
                 const snap = await db.collection('games').where('code', '==', code).where('status', '==', 'waiting').get();
-                if (snap.empty) return alert('Игра не найдена или уже началась');
+                if (snap.empty) return notify('Игра не найдена', 'error');
                 const gameDoc = snap.docs[0];
-                const gameData = gameDoc.data();
-                if (gameData.players.length >= 3) return alert('Игра уже заполнена');
-                if (gameData.players.some(p => p.uid === currentUser.uid)) {
+                const game = gameDoc.data();
+                if (game.players.length >= 3) return notify('Игра заполнена', 'error');
+                if (game.players.some(p => p.uid === currentUser.uid)) {
+                    // Уже в игре, просто перейти в лобби
                     currentGameId = gameDoc.id;
-                    joinLobby(gameDoc.id);
+                    enterLobby(gameDoc.id, game.code);
                     return;
                 }
+                // Добавить игрока
                 await db.collection('games').doc(gameDoc.id).update({
                     players: firebase.firestore.FieldValue.arrayUnion({
                         uid: currentUser.uid,
@@ -210,30 +376,39 @@
                         name: currentUser.displayName || 'Игрок',
                         hp: 100,
                         gold: 0,
-                        items: [],
-                        position: { x: 0, y: 0 }
+                        items: ['potion'],
+                        position: { x: BOARD_SIZE - 1, y: BOARD_SIZE - 1 }
                     })
                 });
                 currentGameId = gameDoc.id;
-                joinLobby(gameDoc.id);
+                enterLobby(gameDoc.id, game.code);
             };
 
-            // Лобби
-            async function joinLobby(gameId) {
-                menuView.style.display = 'none';
-                lobbyView.style.display = 'block';
-                gameView.style.display = 'none';
-                document.getElementById('lobby-code').textContent = '';
-                detachGameListener();
-                gameListener = db.collection('games').doc(gameId).onSnapshot(doc => {
+            // Вход в лобби и подписка на изменения игры
+            function enterLobby(gameId, code) {
+                menuView.classList.add('hidden');
+                lobbyView.classList.remove('hidden');
+                gameView.classList.add('hidden');
+                document.getElementById('lobby-code').textContent = code;
+                // Кнопка копирования
+                document.getElementById('copy-code-btn').onclick = () => {
+                    navigator.clipboard.writeText(code).then(() => notify('Код скопирован!'));
+                };
+                // Подписка на игру
+                if (gameUnsubscribe) gameUnsubscribe();
+                gameUnsubscribe = db.collection('games').doc(gameId).onSnapshot(doc => {
                     const game = doc.data();
-                    if (!game) { alert('Игра удалена'); loadMainMenu(); return; }
-                    document.getElementById('lobby-code').textContent = game.code;
-                    renderLobbyPlayers(game.players);
-                    const isCreator = game.players[0]?.uid === currentUser.uid;
-                    document.getElementById('start-game-btn').style.display = (isCreator && game.players.length === 3) ? 'inline-block' : 'none';
+                    if (!game) {
+                        notify('Игра удалена', 'error');
+                        loadMainMenu();
+                        return;
+                    }
+                    updateLobby(game);
                     if (game.status === 'active') startGameView(gameId);
-                    else if (game.status === 'finished') { alert('Игра завершена'); loadMainMenu(); }
+                    else if (game.status === 'finished') {
+                        notify('Игра завершена');
+                        loadMainMenu();
+                    }
                 });
                 document.getElementById('start-game-btn').onclick = async () => {
                     await db.collection('games').doc(gameId).update({
@@ -244,59 +419,80 @@
                 };
             }
 
-            function renderLobbyPlayers(players) {
-                document.getElementById('lobby-players').innerHTML = players.map(p => `
-                    <div class="lobby-player">${p.name} ${p.uid === currentUser.uid ? '(вы)' : ''}</div>
+            // Обновление лобби
+            function updateLobby(game) {
+                const playersDiv = document.getElementById('lobby-players');
+                playersDiv.innerHTML = game.players.map(p => `
+                    <div class="player-card">
+                        <span>${p.name}</span>
+                        ${p.uid === currentUser.uid ? '(вы)' : ''}
+                    </div>
                 `).join('');
+                // Показать кнопку старта только создателю, если 3 игрока
+                const isCreator = game.players[0]?.uid === currentUser.uid;
+                const canStart = game.players.length === 3 && isCreator;
+                document.getElementById('start-game-btn').style.display = canStart ? 'block' : 'none';
+                document.getElementById('lobby-status').textContent =
+                    game.players.length < 3 ? `Ожидание игроков (${game.players.length}/3)` : 'Можно начинать!';
             }
 
-            // Генерация поля
+            // Генерация случайного поля
             function generateRandomBoard() {
                 const board = [];
                 for (let y = 0; y < BOARD_SIZE; y++) {
                     const row = [];
                     for (let x = 0; x < BOARD_SIZE; x++) {
-                        const rand = Math.random();
-                        if (rand < 0.2) row.push('gold');
-                        else if (rand < 0.35) row.push('trap');
-                        else if (rand < 0.45) row.push('monster');
+                        const r = Math.random();
+                        if (r < 0.2) row.push('gold');
+                        else if (r < 0.35) row.push('trap');
+                        else if (r < 0.45) row.push('monster');
                         else row.push('empty');
                     }
                     board.push(row);
                 }
-                // Стартовые позиции (углы)
                 return board;
             }
 
-            // Игровой процесс
+            // Запуск игрового вида
             function startGameView(gameId) {
-                lobbyView.style.display = 'none';
-                gameView.style.display = 'block';
-                detachGameListener();
-                gameListener = db.collection('games').doc(gameId).onSnapshot(doc => {
+                lobbyView.classList.add('hidden');
+                gameView.classList.remove('hidden');
+                if (gameUnsubscribe) gameUnsubscribe();
+                gameUnsubscribe = db.collection('games').doc(gameId).onSnapshot(doc => {
                     const game = doc.data();
-                    if (!game || game.status === 'finished') { loadMainMenu(); return; }
+                    if (!game || game.status === 'finished') {
+                        loadMainMenu();
+                        return;
+                    }
                     renderGame(game);
                 });
             }
 
+            // Рендер игры
             function renderGame(game) {
                 const me = game.players.find(p => p.uid === currentUser.uid);
                 if (!me) return;
-                document.getElementById('game-status').textContent = game.gameOver ? 'Игра окончена!' :
+                // Статус хода
+                document.getElementById('game-status').textContent = game.gameOver ?
+                    '🏁 Игра окончена!' :
                     `Ход: ${game.players[game.currentTurn]?.name || '...'}`;
-                document.getElementById('player-stats').innerHTML = game.players.map(p => `
-                    <div style="margin:5px 0;">
-                        <strong>${p.name}</strong> ❤️${p.hp} 💰${p.gold}
-                        <div class="hp-bar"><div class="hp-fill" style="width:${p.hp}%;"></div></div>
+                // Статистика игроков
+                const statsDiv = document.getElementById('player-stats');
+                statsDiv.innerHTML = game.players.map(p => `
+                    <div style="flex:1; text-align:center;">
+                        <strong>${p.name}</strong><br>
+                        ❤️${p.hp} 💰${p.gold}
+                        <div class="hp-bar" style="margin:4px auto;"><div class="hp-fill" style="width:${p.hp}%;"></div></div>
                     </div>
                 `).join('');
 
+                // Игровое поле
                 const boardDiv = document.getElementById('board-container');
                 boardDiv.innerHTML = '';
                 const boardEl = document.createElement('div');
                 boardEl.className = 'board';
                 boardEl.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, var(--cell-size))`;
+                // Ячейки
                 for (let y = 0; y < BOARD_SIZE; y++) {
                     for (let x = 0; x < BOARD_SIZE; x++) {
                         const cell = document.createElement('div');
@@ -305,14 +501,14 @@
                         boardEl.appendChild(cell);
                     }
                 }
-                // Размещаем игроков
+                // Размещение игроков
                 game.players.forEach((p, idx) => {
                     const token = document.createElement('div');
                     token.className = 'player-token';
-                    token.style.background = ['#e94560','#4a90d9','#f0c040'][idx];
+                    token.style.background = ['#e94560', '#4a90d9', '#f0c040'][idx % 3];
+                    token.style.left = (p.position.x * (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) || 50) + 20) + 'px';
+                    token.style.top = (p.position.y * 50 + 20) + 'px';
                     token.textContent = idx + 1;
-                    token.style.left = (p.position.x * 72 + 20) + 'px';
-                    token.style.top = (p.position.y * 72 + 20) + 'px';
                     if (idx === game.currentTurn && !game.gameOver) token.classList.add('active-turn');
                     boardEl.appendChild(token);
                 });
@@ -323,12 +519,16 @@
                 controls.innerHTML = '';
                 if (!game.gameOver && game.players[game.currentTurn]?.uid === currentUser.uid) {
                     controls.innerHTML = `
-                        <button class="btn btn-accent" onclick="movePlayer('up')">⬆️</button>
-                        <button class="btn btn-accent" onclick="movePlayer('down')">⬇️</button>
-                        <button class="btn btn-accent" onclick="movePlayer('left')">⬅️</button>
-                        <button class="btn btn-accent" onclick="movePlayer('right')">➡️</button>
-                        <button class="btn btn-gold" onclick="useItem()">🧪 Зелье</button>
-                        <button class="btn btn-gold" onclick="attackPlayer()">⚔️ Атака</button>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; max-width:200px; margin:0 auto;">
+                            <span></span><button class="btn btn-accent btn-sm" onclick="movePlayer('up')">⬆️</button><span></span>
+                            <button class="btn btn-accent btn-sm" onclick="movePlayer('left')">⬅️</button>
+                            <span></span><button class="btn btn-accent btn-sm" onclick="movePlayer('right')">➡️</button>
+                            <span></span><button class="btn btn-accent btn-sm" onclick="movePlayer('down')">⬇️</button><span></span>
+                        </div>
+                        <div style="margin-top:10px;">
+                            <button class="btn btn-gold btn-sm" onclick="useItem()">🧪 Зелье</button>
+                            <button class="btn btn-gold btn-sm" onclick="attackPlayer()">⚔️ Атака</button>
+                        </div>
                     `;
                 }
             }
@@ -350,18 +550,24 @@
                         else if (dir === 'down') newY++;
                         else if (dir === 'left') newX--;
                         else if (dir === 'right') newX++;
-                        if (newX < 0 || newX >= BOARD_SIZE || newY < 0 || newY >= BOARD_SIZE) throw new Error('За границу нельзя');
-                        // Проверка на другого игрока
-                        const otherPlayer = game.players.find(p => p.position.x === newX && p.position.y === newY);
-                        if (otherPlayer) throw new Error('Клетка занята другим игроком');
-                        // Применяем эффект клетки
+                        if (newX < 0 || newX >= BOARD_SIZE || newY < 0 || newY >= BOARD_SIZE) throw new Error('Край карты');
+                        // Занято ли другим игроком?
+                        if (game.players.some(p => p.position.x === newX && p.position.y === newY)) throw new Error('Клетка занята');
+                        // Эффект клетки
                         const cellType = game.board[newY][newX];
-                        if (cellType === 'gold') { player.gold += 10; game.board[newY][newX] = 'empty'; }
-                        else if (cellType === 'trap') { player.hp -= 15; }
-                        else if (cellType === 'monster') {
+                        if (cellType === 'gold') {
+                            player.gold += 10;
+                            game.board[newY][newX] = 'empty';
+                        } else if (cellType === 'trap') {
+                            player.hp -= 15;
+                        } else if (cellType === 'monster') {
                             const weaponIdx = player.items.indexOf('weapon');
-                            if (weaponIdx >= 0) { player.items.splice(weaponIdx, 1); player.gold += 15; }
-                            else { player.hp -= 20; }
+                            if (weaponIdx >= 0) {
+                                player.items.splice(weaponIdx, 1);
+                                player.gold += 20;
+                            } else {
+                                player.hp -= 20;
+                            }
                         }
                         player.position = { x: newX, y: newY };
                         // Проверка смерти
@@ -371,72 +577,70 @@
                         }
                         // Победа по золоту
                         if (player.gold >= 100) game.gameOver = true;
-                        // Переход хода
+                        // Следующий ход
                         game.currentTurn = (game.currentTurn + 1) % game.players.length;
                         transaction.update(gameRef, game);
                     });
-                } catch (e) { alert(e.message); }
+                } catch (e) { notify(e.message, 'error'); }
             };
 
             window.useItem = async () => {
                 const gameRef = db.collection('games').doc(currentGameId);
-                await db.runTransaction(async (transaction) => {
-                    const doc = await transaction.get(gameRef);
-                    const game = doc.data();
-                    const player = game.players[game.currentTurn];
-                    if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
-                    const potionIdx = player.items.indexOf('potion');
-                    if (potionIdx < 0) throw new Error('Нет зелья');
-                    player.items.splice(potionIdx, 1);
-                    player.hp = Math.min(100, player.hp + 30);
-                    game.currentTurn = (game.currentTurn + 1) % game.players.length;
-                    transaction.update(gameRef, game);
-                }).catch(e => alert(e.message));
+                try {
+                    await db.runTransaction(async (transaction) => {
+                        const doc = await transaction.get(gameRef);
+                        const game = doc.data();
+                        const player = game.players[game.currentTurn];
+                        if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
+                        const potionIdx = player.items.indexOf('potion');
+                        if (potionIdx < 0) throw new Error('Нет зелья');
+                        player.items.splice(potionIdx, 1);
+                        player.hp = Math.min(100, player.hp + 30);
+                        game.currentTurn = (game.currentTurn + 1) % game.players.length;
+                        transaction.update(gameRef, game);
+                    });
+                } catch (e) { notify(e.message, 'error'); }
             };
 
             window.attackPlayer = async () => {
                 const gameRef = db.collection('games').doc(currentGameId);
-                await db.runTransaction(async (transaction) => {
-                    const doc = await transaction.get(gameRef);
-                    const game = doc.data();
-                    const player = game.players[game.currentTurn];
-                    if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
-                    // Поиск соседа
-                    const target = game.players.find(p => p.uid !== player.uid &&
-                        Math.abs(p.position.x - player.position.x) + Math.abs(p.position.y - player.position.y) === 1);
-                    if (!target) throw new Error('Нет соседа для атаки');
-                    target.hp -= 20;
-                    if (target.hp <= 0) {
-                        game.players = game.players.filter(p => p.uid !== target.uid);
-                        if (game.players.length <= 1) game.gameOver = true;
-                    }
-                    game.currentTurn = (game.currentTurn + 1) % game.players.length;
-                    transaction.update(gameRef, game);
-                }).catch(e => alert(e.message));
+                try {
+                    await db.runTransaction(async (transaction) => {
+                        const doc = await transaction.get(gameRef);
+                        const game = doc.data();
+                        const player = game.players[game.currentTurn];
+                        if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
+                        // Ищем соседа по соседним клеткам
+                        const target = game.players.find(p =>
+                            p.uid !== player.uid &&
+                            Math.abs(p.position.x - player.position.x) + Math.abs(p.position.y - player.position.y) === 1
+                        );
+                        if (!target) throw new Error('Нет цели для атаки');
+                        target.hp -= 20;
+                        if (target.hp <= 0) {
+                            game.players = game.players.filter(p => p.uid !== target.uid);
+                            if (game.players.length <= 1) game.gameOver = true;
+                        }
+                        game.currentTurn = (game.currentTurn + 1) % game.players.length;
+                        transaction.update(gameRef, game);
+                    });
+                } catch (e) { notify(e.message, 'error'); }
             };
 
-            function detachGameListener() {
-                if (gameListener) { gameListener(); gameListener = null; }
-            }
+            // Админ-функция
+            document.getElementById('admin-delete-games')?.addEventListener('click', async () => {
+                if (!isAdmin) return;
+                const snap = await db.collection('games').get();
+                const batch = db.batch();
+                snap.docs.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                document.getElementById('admin-result').textContent = 'Игры удалены';
+            });
 
-            // Админ-панель
-            function renderAdminPanel() {
-                adminView.innerHTML = `
-                    <h3>⚙️ Админ-панель</h3>
-                    <button class="btn btn-accent" id="admin-delete-games">Удалить все игры</button>
-                    <div id="admin-result"></div>
-                `;
-                document.getElementById('admin-delete-games').onclick = async () => {
-                    const snap = await db.collection('games').get();
-                    const batch = db.batch();
-                    snap.docs.forEach(d => batch.delete(d.ref));
-                    await batch.commit();
-                    document.getElementById('admin-result').textContent = 'Все игры удалены';
-                };
-            }
-
-            // Обработка закрытия
-            window.addEventListener('beforeunload', detachGameListener);
+            // Очистка при уходе
+            window.addEventListener('beforeunload', () => {
+                if (gameUnsubscribe) gameUnsubscribe();
+            });
         })();
     </script>
 </body>
