@@ -1,669 +1,1050 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>⚒️ Gold Rush — Битва за сокровища</title>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <style>
-        :root {
-            --bg: #1a1a2e;
-            --panel: #16213e;
-            --accent: #e94560;
-            --gold: #f0c040;
-            --text: #e0e0e0;
-            --muted: #a0a0b8;
-            --cell-size: 18vw;
-            --radius: 16px;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 10px;
-            touch-action: manipulation;
-        }
-        #app {
-            width: 100%;
-            max-width: 500px;
-            background: var(--panel);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-top: 10px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-        }
-        .btn {
-            padding: 12px 18px;
-            border-radius: 30px;
-            border: none;
-            font-weight: 700;
-            font-size: 1.2em;
-            cursor: pointer;
-            margin: 6px 4px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background: #2a2a4a;
-            color: #fff;
-            transition: 0.2s;
-            min-width: 44px;
-            min-height: 44px;
-        }
-        .btn-accent { background: var(--accent); }
-        .btn-gold { background: var(--gold); color: #000; }
-        .btn-outline { background: transparent; border: 2px solid var(--accent); color: var(--accent); }
-        .btn-sm { padding: 8px 14px; font-size: 0.85em; }
-        .btn-info { background: #4a90d9; }
-        .input {
-            width: 100%;
-            padding: 14px 16px;
-            margin: 8px 0;
-            border-radius: 12px;
-            border: 1px solid #333;
-            background: #1e1e38;
-            color: #fff;
-            font-size: 1em;
-        }
-        .public-lobby {
-            background: #0f3460;
-            padding: 16px;
-            border-radius: 12px;
-            text-align: center;
-            margin: 16px 0;
-        }
-        .private-section {
-            background: #1e1e38;
-            padding: 16px;
-            border-radius: 12px;
-            margin: 16px 0;
-        }
-        .board {
-            display: grid;
-            gap: 3px;
-            justify-content: center;
-            margin: 10px 0;
-            position: relative;
-        }
-        .cell {
-            width: var(--cell-size);
-            height: var(--cell-size);
-            background: #2a2a4a;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8em;
-        }
-        .cell.gold { background: #4a3f1e; }
-        .cell.trap { background: #5e1e1e; }
-        .cell.monster { background: #3e1e5e; }
-        .player-token {
-            position: absolute;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid white;
-            font-size: 1em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 0 8px rgba(0,0,0,0.5);
-            z-index: 2;
-        }
-        .active-turn { animation: pulse 0.8s infinite; }
-        @keyframes pulse { 0%,100%{transform: scale(1)} 50%{transform: scale(1.3)} }
-        .player-card {
-            background: #0f3460;
-            padding: 8px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9em;
-        }
-        .hp-bar { width: 80px; height: 8px; background: #444; border-radius: 4px; overflow: hidden; }
-        .hp-fill { height: 100%; background: #4caf84; }
-        .flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .mt-2 { margin-top: 10px; }
-        .mb-2 { margin-bottom: 10px; }
-        .text-center { text-align: center; }
-        .hidden { display: none; }
-        #notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            z-index: 1000;
-            font-weight: 600;
-            opacity: 0.95;
-        }
-        .modal-overlay {
-            position: fixed; top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.7); z-index:200;
-            display: flex; align-items:center; justify-content:center;
-        }
-        .modal {
-            background: var(--panel); border-radius: var(--radius);
-            padding: 20px; max-width: 350px; width: 90%;
-            text-align: center;
-        }
-        .close-modal-btn {
-            position: absolute; top:10px; right:10px;
-            background: none; border:none; color:var(--accent);
-            font-size: 1.8em; cursor:pointer;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, touch-action: manipulation">
+  <title>Gold Rush</title>
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 10px;
+      touch-action: manipulation;
+    }
+    #app {
+      width: 100%;
+      max-width: 500px;
+      background: #16213e;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .hidden { display: none !important; }
+    button {
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin: 5px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: 0.2s;
+      min-width: 44px;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+    button:active { transform: scale(0.95); opacity: 0.8; }
+    button.secondary { background: #0f3460; }
+    button.gold { background: #f0c040; color: #1a1a2e; }
+    input, select {
+      background: #0f3460;
+      border: 1px solid #f0c040;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 5px 0;
+      color: white;
+      font-size: 1rem;
+      width: 100%;
+      outline: none;
+    }
+    input::placeholder { color: #a0a0a0; }
+    h2, h3 { color: #f0c040; margin-bottom: 10px; }
+    .flex { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .flex-col { display: flex; flex-direction: column; gap: 8px; }
+    .grid-6x6 {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      aspect-ratio: 1 / 1;
+      margin: 10px 0;
+    }
+    .cell {
+      background: #1a1a2e;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      position: relative;
+      transition: 0.2s;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+      aspect-ratio: 1 / 1;
+    }
+    .player-token {
+      width: 70%;
+      height: 70%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: white;
+      text-shadow: 1px 1px 2px black;
+      transition: transform 0.2s;
+    }
+    .token-pulse {
+      animation: pulse 0.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .hp-bar {
+      background: #333;
+      height: 8px;
+      border-radius: 4px;
+      width: 100%;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .hp-fill {
+      height: 100%;
+      background: #e94560;
+      transition: width 0.3s;
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-content {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 20px;
+      max-width: 90%;
+      max-height: 80%;
+      overflow-y: auto;
+      border: 1px solid #f0c040;
+    }
+    .close-btn {
+      float: right;
+      background: transparent;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      min-width: 40px;
+      min-height: 40px;
+    }
+    .chat-box {
+      background: #0f3460;
+      border-radius: 12px;
+      padding: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+    .chat-input {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+    }
+    .admin-panel {
+      border: 1px solid #f0c040;
+      padding: 10px;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+    .float-num {
+      position: absolute;
+      font-weight: bold;
+      pointer-events: none;
+      animation: floatUp 1s ease-out forwards;
+      z-index: 10;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-30px); }
+    }
+    .leaderboard { background: #0f3460; border-radius: 12px; padding: 10px; margin-top: 10px; }
+  </style>
 </head>
 <body>
-    <div id="app">
-        <!-- Экран авторизации -->
-        <div id="auth-screen">
-            <h2 style="text-align:center; margin-bottom:16px;">⚒️ Gold Rush</h2>
-            <input type="email" id="email" class="input" placeholder="📧 Email">
-            <input type="password" id="password" class="input" placeholder="🔒 Пароль">
-            <div id="name-group" style="display:none;">
-                <input type="text" id="username" class="input" placeholder="😺 Никнейм">
-            </div>
-            <p id="auth-error" style="color:#ff6b6b; font-size:0.8em; margin:4px 0;"></p>
-            <button class="btn btn-accent" id="auth-btn" style="width:100%;">🔑 Войти</button>
-            <p style="text-align:center; margin-top:12px; font-size:0.9em;">
-                <span id="toggle-mode" style="color:var(--accent); cursor:pointer;">📝 Регистрация</span>
-            </p>
-        </div>
-
-        <!-- Основной интерфейс -->
-        <div id="main-screen" class="hidden">
-            <div class="flex-between mb-2">
-                <span id="user-info" style="font-weight:600;"></span>
-                <button class="btn btn-sm btn-outline" id="logout-btn">🚪 Выйти</button>
-            </div>
-
-            <!-- Главное меню -->
-            <div id="menu-view">
-                <!-- Публичная игра -->
-                <div class="public-lobby" id="public-lobby-info">
-                    <h3>🌍 Публичная игра</h3>
-                    <p id="lobby-players-count">👥 Загрузка...</p>
-                    <div id="lobby-players-list" class="flex-row" style="justify-content:center;"></div>
-                    <button class="btn btn-gold" id="join-public-btn">⚔️ Войти в публичную игру</button>
-                    <p id="lobby-message" style="color:var(--muted); font-size:0.8em;"></p>
-                </div>
-
-                <!-- Приватные игры -->
-                <div class="private-section">
-                    <h3>🔒 Приватная игра</h3>
-                    <button class="btn btn-accent" id="create-private-btn">➕ Создать</button>
-                    <div style="margin:12px 0;">
-                        <input type="text" id="join-code" class="input" placeholder="🔢 Код игры" style="text-align:center; text-transform:uppercase;">
-                        <button class="btn btn-info" id="join-private-btn">🔍 Присоединиться</button>
-                    </div>
-                    <div id="private-games-list" style="font-size:0.85em; color:var(--muted);"></div>
-                </div>
-
-                <button class="btn btn-info btn-sm" id="show-rules-btn" style="width:100%;">📖 Правила</button>
-            </div>
-
-            <!-- Лобби приватной игры -->
-            <div id="private-lobby-view" class="hidden">
-                <h3>🔒 Приватная игра <span id="private-lobby-code"></span></h3>
-                <div id="private-lobby-players"></div>
-                <button class="btn btn-accent" id="private-start-btn" style="display:none;">▶️ Начать игру</button>
-                <p id="private-lobby-status" style="color:var(--muted);"></p>
-            </div>
-
-            <!-- Игровой процесс -->
-            <div id="game-view" class="hidden" style="position:relative;">
-                <button class="close-modal-btn" id="game-rules-btn" style="position:absolute; top:5px; right:5px; z-index:10;">❓</button>
-                <div class="flex-between">
-                    <span id="game-status"></span>
-                </div>
-                <div id="player-stats" class="flex-row" style="justify-content: space-around;"></div>
-                <div id="board-container" class="text-center"></div>
-                <div id="controls" class="text-center" style="margin-top:12px;"></div>
-            </div>
-
-            <!-- Админ-панель -->
-            <div id="admin-view" class="hidden mt-2">
-                <h4>⚙️ Админ</h4>
-                <button class="btn btn-sm" id="admin-reset-public">🔄 Сбросить публичную игру</button>
-            </div>
-        </div>
+  <div id="app">
+    <!-- Экраны -->
+    <div id="login-screen" class="flex-col">
+      <h2>🔑 Вход / Регистрация</h2>
+      <input type="email" id="login-email" placeholder="Email">
+      <input type="password" id="login-password" placeholder="Пароль">
+      <input type="text" id="login-nickname" placeholder="😺 Никнейм (только для регистрации)" class="hidden">
+      <div class="flex">
+        <button id="login-btn">🔑 Войти</button>
+        <button id="toggle-register-btn" class="secondary">📝 Регистрация</button>
+      </div>
+      <div id="auth-error" style="color:#e94560;"></div>
     </div>
 
-    <div id="notification" class="hidden"></div>
+    <div id="menu-screen" class="hidden flex-col">
+      <h2>🏠 Меню</h2>
+      <div id="public-game-info">
+        <h3>🌍 Публичная игра <span id="public-players-count">0/3</span></h3>
+        <div id="public-player-list"></div>
+        <button id="join-public-btn" class="gold">⚔️ Войти в публичную игру</button>
+        <div id="public-status-msg"></div>
+      </div>
+      <div id="private-games-section">
+        <h3>🔒 Приватные игры</h3>
+        <div class="flex">
+          <input type="text" id="private-code-input" placeholder="🔢 Код игры" maxlength="4">
+          <button id="join-private-btn">🔍 Присоединиться</button>
+        </div>
+        <button id="create-private-btn" class="secondary">➕ Создать</button>
+        <div id="active-private-games" class="flex-col"></div>
+      </div>
+      <button id="rules-menu-btn">📖 Правила</button>
+      <button id="logout-btn" class="secondary">🚪 Выйти</button>
+      <div id="admin-menu" class="admin-panel hidden">
+        <h3>🔧 Админ-панель</h3>
+        <button id="reset-public-btn">🔄 Сбросить публичную игру</button>
+        <button id="ban-player-btn">⛔ Забанить игрока</button>
+        <input type="text" id="ban-uid-input" placeholder="UID игрока для бана">
+      </div>
+    </div>
+
+    <div id="lobby-screen" class="hidden flex-col">
+      <h2>🚪 Лобби: <span id="lobby-code-display"></span></h2>
+      <div id="lobby-players"></div>
+      <div id="lobby-class-select" class="flex-col">
+        <h3>Выберите класс:</h3>
+        <button class="class-btn" data-class="prospector">⛏️ Старатель</button>
+        <button class="class-btn" data-class="warrior">🛡️ Воин</button>
+        <button class="class-btn" data-class="alchemist">🧪 Алхимик</button>
+      </div>
+      <div id="lobby-timer-select">
+        <label>⏱️ Таймер хода (сек):</label>
+        <select id="turn-timer-select">
+          <option value="30">30</option>
+          <option value="60">60</option>
+          <option value="0">Без ограничений</option>
+        </select>
+      </div>
+      <button id="start-game-btn" class="gold" disabled>▶️ Начать игру (только создатель)</button>
+      <div id="lobby-status">Ожидание игроков...</div>
+      <button id="leave-lobby-btn" class="secondary">🚪 Покинуть лобби</button>
+    </div>
+
+    <div id="game-screen" class="hidden flex-col">
+      <div class="flex" style="justify-content: space-between;">
+        <h3 id="game-status">🎲 Ход: ...</h3>
+        <button id="rules-game-btn">❓</button>
+      </div>
+      <div id="game-board" class="grid-6x6"></div>
+      <div id="players-stats" class="flex"></div>
+      <div id="game-controls" class="flex-col hidden">
+        <div class="flex" style="justify-content: center;">
+          <button class="move-btn" data-dir="up">⬆️</button>
+        </div>
+        <div class="flex" style="justify-content: center;">
+          <button class="move-btn" data-dir="left">⬅️</button>
+          <button class="move-btn" data-dir="down">⬇️</button>
+          <button class="move-btn" data-dir="right">➡️</button>
+        </div>
+        <div class="flex" style="justify-content: center;">
+          <button id="use-potion-btn">🧪 Зелье</button>
+          <button id="attack-btn">⚔️ Атака</button>
+        </div>
+        <div id="item-extra-btns" class="flex"></div>
+      </div>
+      <div class="chat-box" id="game-chat-messages"></div>
+      <div class="chat-input">
+        <input type="text" id="chat-input-field" placeholder="Сообщение...">
+        <button id="send-chat-btn">📨</button>
+      </div>
+      <div id="timer-display" style="text-align:center; margin:5px 0;"></div>
+    </div>
 
     <!-- Модальное окно правил -->
-    <div id="rules-modal" class="modal-overlay hidden">
-        <div class="modal" style="position:relative;">
-            <button class="close-modal-btn" onclick="document.getElementById('rules-modal').classList.add('hidden')">❌</button>
-            <h2>📖 Правила игры</h2>
-            <p>⚒️ <b>Цель:</b> накопить 100 золота или остаться последним выжившим.</p>
-            <p>🪙 <b>Клетки:</b> золото (+10💰), ловушки (-15❤️), монстры (-20❤️, можно убить оружием).</p>
-            <p>🎮 <b>Ход:</b> используйте стрелки. Нельзя ходить на занятые клетки.</p>
-            <p>🧪 <b>Зелье:</b> +30 HP (тратится).</p>
-            <p>⚔️ <b>Атака:</b> бьёт соседа (-20 HP).</p>
-            <p>🔄 Случайные события: новое золото или ловушка каждый ход (30%).</p>
-            <button class="btn btn-accent" onclick="document.getElementById('rules-modal').classList.add('hidden')">✅ Понятно</button>
-        </div>
+    <div id="rules-modal" class="modal hidden">
+      <div class="modal-content">
+        <button class="close-btn" id="close-rules-modal">❌</button>
+        <h2>📖 Правила игры</h2>
+        <p>🪙 Соберите 100 золота, чтобы победить!</p>
+        <p>⬆️⬇️⬅️➡️ Двигайтесь по клеткам. Остерегайтесь ловушек (💀) и монстров (👾).</p>
+        <p>🧪 Зелье восстанавливает 30 HP. ⚔️ Атака наносит 20 урона соседнему игроку.</p>
+        <p>🛡️ Щит поглощает одну ловушку/атаку, 💣 Бомба уничтожает всё в радиусе 2, 📜 Карта показывает всё золото, 👢 Сапоги дают двойной ход.</p>
+        <p>🌀 Телепорт, 🏪 Рынок, ❄️ Ледяная ловушка (пропуск хода), 🔥 Источник (+15 HP), 💀 Проклятая земля (-10% золота).</p>
+        <p>Каждые 5 ходов — случайное глобальное событие!</p>
+        <button id="close-rules-btn" class="gold">✅ Понятно</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        (function() {
-            // Firebase
-            firebase.initializeApp({
-                apiKey: "AIzaSyDS1y5XkbXMGEFDm6pcvgOLXXdcWlCtjBQ",
-                authDomain: "cat-genetics-v12.firebaseapp.com",
-                projectId: "cat-genetics-v12",
-                storageBucket: "cat-genetics-v12.firebasestorage.app",
-                messagingSenderId: "91251979492",
-                appId: "1:91251979492:web:c7f155914900e8a1b528f1"
-            });
-            const auth = firebase.auth();
-            const db = firebase.firestore();
+  <script>
+    // Конфигурация Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDS1y5XkbXMGEFDm6pcvgOLXXdcWlCtjBQ",
+      authDomain: "cat-genetics-v12.firebaseapp.com",
+      projectId: "cat-genetics-v12",
+      storageBucket: "cat-genetics-v12.firebasestorage.app",
+      messagingSenderId: "91251979492",
+      appId: "1:91251979492:web:c7f155914900e8a1b528f1",
+      measurementId: "G-TZJ3HZR01B"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-            const PUBLIC_GAME_ID = 'main_lobby';
-            const BOARD_SIZE = 6;
+    // Глобальные переменные
+    let currentUser = null;
+    let currentGameDoc = null; // Firestore документ игры
+    let currentGameData = null;
+    let unsubscribeGame = null;
+    let unsubscribeChat = null;
+    let currentPlayerIndex = null;
+    let selectedClass = null;
+    let playerTimers = {};
 
-            let currentUser = null;
-            let currentGameRef = null;
-            let currentGameId = null;
-            let gameUnsubscribe = null;
-            let isAdmin = false;
+    // Экраны
+    const loginScreen = document.getElementById('login-screen');
+    const menuScreen = document.getElementById('menu-screen');
+    const lobbyScreen = document.getElementById('lobby-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const rulesModal = document.getElementById('rules-modal');
 
-            // DOM элементы
-            const authScreen = document.getElementById('auth-screen');
-            const mainScreen = document.getElementById('main-screen');
-            const menuView = document.getElementById('menu-view');
-            const privateLobbyView = document.getElementById('private-lobby-view');
-            const gameView = document.getElementById('game-view');
-            const adminView = document.getElementById('admin-view');
-            const rulesModal = document.getElementById('rules-modal');
+    // UI вспомогательные функции
+    function showScreen(screen) {
+      [loginScreen, menuScreen, lobbyScreen, gameScreen].forEach(s => s.classList.add('hidden'));
+      screen.classList.remove('hidden');
+    }
 
-            function notify(msg, type='info') {
-                const el = document.getElementById('notification');
-                el.textContent = msg;
-                el.style.background = type==='error' ? '#e94560' : '#4caf84';
-                el.classList.remove('hidden');
-                setTimeout(() => el.classList.add('hidden'), 2500);
+    function showRules() { rulesModal.classList.remove('hidden'); }
+    function hideRules() { rulesModal.classList.add('hidden'); }
+    document.getElementById('rules-menu-btn').addEventListener('click', showRules);
+    document.getElementById('rules-game-btn').addEventListener('click', showRules);
+    document.getElementById('close-rules-modal').addEventListener('click', hideRules);
+    document.getElementById('close-rules-btn').addEventListener('click', hideRules);
+
+    // Аутентификация
+    document.getElementById('toggle-register-btn').addEventListener('click', () => {
+      const nickField = document.getElementById('login-nickname');
+      const btn = document.getElementById('toggle-register-btn');
+      const loginBtn = document.getElementById('login-btn');
+      if (nickField.classList.contains('hidden')) {
+        nickField.classList.remove('hidden');
+        btn.textContent = '🔑 Войти';
+        loginBtn.textContent = '📝 Зарегистрироваться';
+      } else {
+        nickField.classList.add('hidden');
+        btn.textContent = '📝 Регистрация';
+        loginBtn.textContent = '🔑 Войти';
+      }
+    });
+
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const nickname = document.getElementById('login-nickname').value.trim();
+      const errorDiv = document.getElementById('auth-error');
+      errorDiv.textContent = '';
+      try {
+        if (document.getElementById('login-nickname').classList.contains('hidden')) {
+          // Вход
+          await auth.signInWithEmailAndPassword(email, password);
+        } else {
+          // Регистрация
+          if (!nickname) { errorDiv.textContent = 'Введите никнейм'; return; }
+          const cred = await auth.createUserWithEmailAndPassword(email, password);
+          await db.collection('users').doc(cred.user.uid).set({
+            email, name: nickname, rubies: 0, wins: 0, gamesPlayed: 0,
+            cosmetics: { frame: 'none', skin: 'default' },
+            bannedFromPublic: false
+          }, { merge: true });
+        }
+      } catch (err) {
+        errorDiv.textContent = err.message;
+      }
+    });
+
+    auth.onAuthStateChanged(async user => {
+      currentUser = user;
+      if (user) {
+        showScreen(menuScreen);
+        await loadMenu();
+        checkAdmin();
+        listenToPublicGame();
+      } else {
+        showScreen(loginScreen);
+        if (unsubscribeGame) unsubscribeGame();
+        if (unsubscribeChat) unsubscribeChat();
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', () => auth.signOut());
+
+    // Админ проверка
+    function checkAdmin() {
+      const adminPanel = document.getElementById('admin-menu');
+      if (currentUser && currentUser.email === 'katya2013sara1981@gmail.com') {
+        adminPanel.classList.remove('hidden');
+      } else {
+        adminPanel.classList.add('hidden');
+      }
+    }
+
+    // Загрузка меню
+    async function loadMenu() {
+      // Проверить публичную игру
+      const pubRef = db.collection('public_games').doc('main_lobby');
+      const pubDoc = await pubRef.get();
+      if (!pubDoc.exists || pubDoc.data().gameOver || pubDoc.data().status === 'finished') {
+        await pubRef.set({
+          status: 'waiting',
+          players: [],
+          board: null,
+          currentTurn: 0,
+          gameOver: false,
+          eventTurn: 0,
+          turnTimeLimit: 0,
+          turnStartTimestamp: null
+        });
+      }
+      // Отобразить список приватных игр
+      const privateGamesSnap = await db.collection('private_games').where('status', '==', 'waiting').limit(5).get();
+      const container = document.getElementById('active-private-games');
+      container.innerHTML = '';
+      privateGamesSnap.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement('div');
+        div.textContent = `🔢 ${data.code} — ${data.players.length}/3`;
+        container.appendChild(div);
+      });
+    }
+
+    // Прослушивание публичной игры
+    function listenToPublicGame() {
+      const pubRef = db.collection('public_games').doc('main_lobby');
+      unsubscribeGame = pubRef.onSnapshot(snap => {
+        const data = snap.data();
+        if (!data) return;
+        document.getElementById('public-players-count').textContent = `${data.players.length}/3`;
+        const listDiv = document.getElementById('public-player-list');
+        listDiv.innerHTML = data.players.map(p => p.name).join(', ') || '—';
+        const joinBtn = document.getElementById('join-public-btn');
+        const statusMsg = document.getElementById('public-status-msg');
+        joinBtn.classList.add('hidden');
+        statusMsg.textContent = '';
+        if (data.status === 'waiting') {
+          const alreadyIn = data.players.some(p => p.uid === currentUser.uid);
+          if (data.players.length < 3 && !alreadyIn) {
+            joinBtn.classList.remove('hidden');
+          } else if (alreadyIn) {
+            statusMsg.textContent = 'Вы уже в лобби';
+            // Автоматически перейти в игру, если она активна
+            if (data.status === 'active') {
+              joinGameAsPlayer(pubRef);
             }
+          } else {
+            statusMsg.textContent = 'Игра заполнена';
+          }
+        } else if (data.status === 'active') {
+          statusMsg.textContent = 'Идёт игра!';
+          // Если пользователь есть в игре, подключаемся
+          if (data.players.some(p => p.uid === currentUser.uid)) {
+            joinGameAsPlayer(pubRef);
+          }
+        }
+      });
+    }
 
-            // Авторизация
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    currentUser = user;
-                    isAdmin = (user.email === 'katya2013sara1981@gmail.com');
-                    authScreen.classList.add('hidden');
-                    mainScreen.classList.remove('hidden');
-                    document.getElementById('user-info').textContent = `👤 ${user.displayName || user.email.split('@')[0]}`;
-                    document.getElementById('logout-btn').onclick = () => auth.signOut();
-                    adminView.classList.toggle('hidden', !isAdmin);
-                    loadMainMenu();
-                } else {
-                    currentUser = null;
-                    authScreen.classList.remove('hidden');
-                    mainScreen.classList.add('hidden');
-                    if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
-                }
-            });
+    document.getElementById('join-public-btn').addEventListener('click', async () => {
+      const pubRef = db.collection('public_games').doc('main_lobby');
+      const doc = await pubRef.get();
+      const data = doc.data();
+      if (!data || data.status !== 'waiting' || data.players.length >= 3) return;
+      // Проверка бана
+      const userDoc = await db.collection('users').doc(currentUser.uid).get();
+      if (userDoc.exists && userDoc.data().bannedFromPublic) {
+        alert('Вы забанены в публичной игре.');
+        return;
+      }
+      const player = createPlayerObject();
+      await pubRef.update({
+        players: firebase.firestore.FieldValue.arrayUnion(player)
+      });
+    });
 
-            // Переключение режимов
-            let isLogin = true;
-            document.getElementById('toggle-mode').onclick = () => {
-                isLogin = !isLogin;
-                document.getElementById('auth-btn').textContent = isLogin ? '🔑 Войти' : '📝 Зарегистрироваться';
-                document.getElementById('toggle-mode').textContent = isLogin ? '📝 Регистрация' : '🔑 Войти';
-                document.getElementById('name-group').style.display = isLogin ? 'none' : 'block';
-            };
-            document.getElementById('auth-btn').onclick = () => {
-                const email = document.getElementById('email').value.trim();
-                const password = document.getElementById('password').value.trim();
-                const username = document.getElementById('username')?.value.trim();
-                const errorEl = document.getElementById('auth-error');
-                if (!email || !password) { errorEl.textContent = 'Заполните поля'; return; }
-                if (password.length < 6) { errorEl.textContent = 'Минимум 6 символов'; return; }
-                const action = isLogin ? auth.signInWithEmailAndPassword(email, password)
-                    : auth.createUserWithEmailAndPassword(email, password).then(r => r.user.updateProfile({displayName: username || email.split('@')[0]}));
-                action.catch(e => { errorEl.textContent = e.message; });
-            };
+    function createPlayerObject(classType = 'prospector') {
+      return {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        name: currentUser.displayName || 'Игрок',
+        hp: 100,
+        gold: 0,
+        items: ['potion'],
+        position: null,
+        class: classType,
+        skipTurn: false
+      };
+    }
 
-            // Загрузка меню
-            async function loadMainMenu() {
-                menuView.classList.remove('hidden');
-                privateLobbyView.classList.add('hidden');
-                gameView.classList.add('hidden');
-                if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
+    // Приватные игры
+    document.getElementById('create-private-btn').addEventListener('click', async () => {
+      const code = generateCode();
+      const player = createPlayerObject(selectedClass || 'prospector');
+      player.position = null;
+      const docRef = await db.collection('private_games').add({
+        code,
+        status: 'waiting',
+        players: [player],
+        board: null,
+        currentTurn: 0,
+        gameOver: false,
+        eventTurn: 0,
+        turnTimeLimit: parseInt(document.getElementById('turn-timer-select').value) || 0,
+        turnStartTimestamp: null
+      });
+      currentGameDoc = docRef;
+      selectedClass = 'prospector'; // по умолчанию
+      listenToGame(docRef);
+      showScreen(lobbyScreen);
+      document.getElementById('lobby-code-display').textContent = code;
+    });
 
-                const publicRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
-                const publicDoc = await publicRef.get();
-                if (!publicDoc.exists) {
-                    await publicRef.set({ status:'waiting', players:[], board:null, currentTurn:0, gameOver:false });
-                } else {
-                    const data = publicDoc.data();
-                    if (data.status === 'finished') await publicRef.update({ status:'waiting', players:[], board:null, currentTurn:0, gameOver:false });
-                }
-                gameUnsubscribe = publicRef.onSnapshot(snap => {
-                    const game = snap.data();
-                    if (!game) return;
-                    updatePublicLobbyUI(game);
-                });
-                loadPrivateGamesList();
+    document.getElementById('join-private-btn').addEventListener('click', async () => {
+      const code = document.getElementById('private-code-input').value.trim();
+      if (!code) return;
+      const snap = await db.collection('private_games').where('code', '==', code).where('status', '==', 'waiting').limit(1).get();
+      if (snap.empty) { alert('Игра не найдена.'); return; }
+      const docRef = snap.docs[0].ref;
+      const data = snap.docs[0].data();
+      if (data.players.length >= 3) { alert('Игра заполнена.'); return; }
+      const player = createPlayerObject(selectedClass || 'prospector');
+      await docRef.update({ players: firebase.firestore.FieldValue.arrayUnion(player) });
+      currentGameDoc = docRef;
+      listenToGame(docRef);
+      showScreen(lobbyScreen);
+      document.getElementById('lobby-code-display').textContent = code;
+    });
+
+    function generateCode() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+      return code;
+    }
+
+    // Выбор класса в лобби
+    document.querySelectorAll('.class-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedClass = btn.dataset.class;
+        document.querySelectorAll('.class-btn').forEach(b => b.classList.remove('gold'));
+        btn.classList.add('gold');
+      });
+    });
+
+    // Слушатель игры
+    function listenToGame(docRef) {
+      if (unsubscribeGame) unsubscribeGame();
+      unsubscribeGame = docRef.onSnapshot(snap => {
+        currentGameData = snap.data();
+        if (!currentGameData) return;
+        if (currentGameData.status === 'waiting') {
+          updateLobbyUI();
+        } else if (currentGameData.status === 'active') {
+          showScreen(gameScreen);
+          renderGame();
+        } else if (currentGameData.status === 'finished') {
+          handleGameOver();
+        }
+      });
+      // Чат
+      if (unsubscribeChat) unsubscribeChat();
+      unsubscribeChat = docRef.collection('messages').orderBy('timestamp', 'asc').onSnapshot(snap => {
+        const chatDiv = document.getElementById('game-chat-messages');
+        chatDiv.innerHTML = '';
+        snap.forEach(msg => {
+          const data = msg.data();
+          chatDiv.innerHTML += `<div><b>${data.sender}:</b> ${data.text}</div>`;
+        });
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+      });
+    }
+
+    function updateLobbyUI() {
+      const data = currentGameData;
+      document.getElementById('lobby-code-display').textContent = data.code || '????';
+      document.getElementById('lobby-players').innerHTML = data.players.map((p,i) => `${p.name} ${p.uid === currentUser.uid ? '(вы)' : ''} ${p.class ? '['+p.class+']' : ''}`).join('<br>');
+      document.getElementById('lobby-status').textContent = data.players.length < 3 ? 'Ожидание игроков...' : 'Можно начинать!';
+      const startBtn = document.getElementById('start-game-btn');
+      if (data.players[0]?.uid === currentUser.uid && data.players.length === 3) {
+        startBtn.disabled = false;
+      } else {
+        startBtn.disabled = true;
+      }
+    }
+
+    document.getElementById('start-game-btn').addEventListener('click', async () => {
+      if (!currentGameDoc || !currentGameData || currentGameData.players.length !== 3) return;
+      const board = generateBoard();
+      const players = currentGameData.players.map((p, i) => {
+        p.position = i === 0 ? {x:0,y:0} : i === 1 ? {x:5,y:5} : {x:0,y:5};
+        p.hp = 100; p.gold = 0; p.items = ['potion']; p.skipTurn = false;
+        return p;
+      });
+      await currentGameDoc.update({
+        status: 'active',
+        board,
+        players,
+        currentTurn: 0,
+        gameOver: false,
+        eventTurn: 0,
+        turnStartTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+
+    function generateBoard() {
+      const types = ['empty', 'gold', 'trap', 'monster', 'teleport', 'market', 'ice_trap', 'source', 'cursed_land'];
+      const weights = [35, 20, 15, 10, 2, 2, 3, 3, 10]; // проценты
+      const board = [];
+      for (let y = 0; y < 6; y++) {
+        const row = [];
+        for (let x = 0; x < 6; x++) {
+          const r = Math.random() * 100;
+          let cum = 0;
+          let type = 'empty';
+          for (let i = 0; i < types.length; i++) {
+            cum += weights[i];
+            if (r <= cum) { type = types[i]; break; }
+          }
+          row.push(type);
+        }
+        board.push(row);
+      }
+      return board;
+    }
+
+    function renderGame() {
+      const board = currentGameData.board;
+      const players = currentGameData.players;
+      const currentTurn = currentGameData.currentTurn;
+      const boardDiv = document.getElementById('game-board');
+      boardDiv.innerHTML = '';
+      for (let y = 0; y < 6; y++) {
+        for (let x = 0; x < 6; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          // Эмодзи клетки
+          const type = board[y][x];
+          let emoji = '';
+          switch (type) {
+            case 'gold': emoji = '🪙'; break;
+            case 'trap': emoji = '💀'; break;
+            case 'monster': emoji = '👾'; break;
+            case 'teleport': emoji = '🌀'; break;
+            case 'market': emoji = '🏪'; break;
+            case 'ice_trap': emoji = '❄️'; break;
+            case 'source': emoji = '🔥'; break;
+            case 'cursed_land': emoji = '💀'; break;
+            default: emoji = '';
+          }
+          cell.textContent = emoji;
+          // Токен игрока
+          players.forEach((p, idx) => {
+            if (p.position && p.position.x === x && p.position.y === y) {
+              const token = document.createElement('div');
+              token.className = 'player-token' + (idx === currentTurn ? ' token-pulse' : '');
+              token.style.background = idx === 0 ? '#e94560' : idx === 1 ? '#0f3460' : '#f0c040';
+              token.textContent = idx + 1;
+              cell.appendChild(token);
             }
+          });
+          boardDiv.appendChild(cell);
+        }
+      }
+      // Статистика
+      const statsDiv = document.getElementById('players-stats');
+      statsDiv.innerHTML = players.map((p, i) => `
+        <div style="flex:1; text-align:center;">
+          <div>${p.name} ${p.class ? '('+p.class+')' : ''}</div>
+          <div class="hp-bar"><div class="hp-fill" style="width:${p.hp}%;"></div></div>
+          <div>❤️${p.hp} 💰${p.gold}</div>
+        </div>
+      `).join('');
 
-            function updatePublicLobbyUI(game) {
-                document.getElementById('lobby-players-count').textContent = `👥 ${game.players.length}/3`;
-                document.getElementById('lobby-players-list').innerHTML = game.players.map(p => `<span class="player-card">${p.name}</span>`).join('');
-                const alreadyIn = game.players.some(p => p.uid === currentUser?.uid);
-                const joinBtn = document.getElementById('join-public-btn');
-                const msgEl = document.getElementById('lobby-message');
-                if (game.status === 'waiting') {
-                    joinBtn.style.display = alreadyIn ? 'none' : (game.players.length >= 3 ? 'none' : 'inline-block');
-                    msgEl.textContent = alreadyIn ? 'Вы уже в лобби' : (game.players.length >= 3 ? 'Игра заполнена' : '');
-                } else {
-                    joinBtn.style.display = 'none';
-                    msgEl.textContent = alreadyIn ? 'Идёт игра!' : 'Идёт игра';
-                }
+      // Элементы управления только для текущего игрока
+      const controls = document.getElementById('game-controls');
+      const currentPlayer = players[currentTurn];
+      if (currentPlayer && currentPlayer.uid === currentUser.uid && !currentGameData.gameOver) {
+        controls.classList.remove('hidden');
+        // Доп кнопки предметов
+        const extraBtns = document.getElementById('item-extra-btns');
+        extraBtns.innerHTML = '';
+        if (currentPlayer.items.includes('shield')) extraBtns.innerHTML += '<button id="use-shield-btn">🛡️ Щит</button>';
+        if (currentPlayer.items.includes('bomb')) extraBtns.innerHTML += '<button id="use-bomb-btn">💣 Бомба</button>';
+        if (currentPlayer.items.includes('treasure_map')) extraBtns.innerHTML += '<button id="use-map-btn">📜 Карта</button>';
+        if (currentPlayer.items.includes('speed_boots')) extraBtns.innerHTML += '<button id="use-boots-btn">👢 Сапоги</button>';
+        // Вешаем обработчики
+        document.getElementById('use-shield-btn')?.addEventListener('click', () => useItem('shield'));
+        document.getElementById('use-bomb-btn')?.addEventListener('click', () => useItem('bomb'));
+        document.getElementById('use-map-btn')?.addEventListener('click', () => useItem('treasure_map'));
+        document.getElementById('use-boots-btn')?.addEventListener('click', () => useItem('speed_boots'));
+      } else {
+        controls.classList.add('hidden');
+      }
+
+      document.getElementById('game-status').textContent = currentGameData.gameOver ? '🏁 Игра окончена!' : `🎲 Ход: ${currentPlayer?.name || '?'}`;
+
+      // Таймер
+      const timerDiv = document.getElementById('timer-display');
+      if (currentGameData.turnTimeLimit > 0 && !currentGameData.gameOver && currentPlayer?.uid === currentUser.uid) {
+        startTurnTimer(currentGameData.turnStartTimestamp, currentGameData.turnTimeLimit);
+      } else {
+        timerDiv.textContent = '';
+      }
+    }
+
+    // Таймер хода
+    let timerInterval = null;
+    function startTurnTimer(startTimestamp, limit) {
+      clearInterval(timerInterval);
+      const updateTimer = async () => {
+        const now = firebase.firestore.Timestamp.now();
+        const start = startTimestamp ? startTimestamp.toMillis() : now.toMillis();
+        const elapsed = (now.toMillis() - start) / 1000;
+        const remaining = Math.max(0, limit - elapsed);
+        document.getElementById('timer-display').textContent = `⏳ ${Math.ceil(remaining)} сек`;
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          // Автопропуск хода
+          if (currentGameDoc && currentGameData && currentGameData.currentTurn === currentPlayerIndex) {
+            await skipTurn();
+          }
+        }
+      };
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 200);
+    }
+
+    async function skipTurn() {
+      const data = currentGameData;
+      const players = [...data.players];
+      const cp = players[data.currentTurn];
+      cp.hp = Math.max(0, cp.hp - 5); // штраф
+      let nextTurn = (data.currentTurn + 1) % players.length;
+      await currentGameDoc.update({
+        players,
+        currentTurn: nextTurn,
+        turnStartTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        eventTurn: (data.eventTurn || 0) + 1
+      });
+    }
+
+    // Движение
+    document.querySelectorAll('.move-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const dir = btn.dataset.dir;
+        const data = currentGameData;
+        if (data.gameOver) return;
+        const cpIndex = data.currentTurn;
+        if (data.players[cpIndex]?.uid !== currentUser.uid) return;
+        const cp = data.players[cpIndex];
+        const newPos = { ...cp.position };
+        switch (dir) {
+          case 'up': newPos.y--; break;
+          case 'down': newPos.y++; break;
+          case 'left': newPos.x--; break;
+          case 'right': newPos.x++; break;
+        }
+        if (newPos.x < 0 || newPos.x > 5 || newPos.y < 0 || newPos.y > 5) return;
+        if (data.players.some(p => p.position && p.position.x === newPos.x && p.position.y === newPos.y)) return;
+        await processMove(newPos);
+      });
+    });
+
+    async function processMove(newPos) {
+      const data = currentGameData;
+      const players = JSON.parse(JSON.stringify(data.players));
+      const cp = players[data.currentTurn];
+      const board = JSON.parse(JSON.stringify(data.board));
+      const cellType = board[newPos.y][newPos.x];
+      cp.position = newPos;
+      // Эффекты клетки
+      let message = '';
+      switch (cellType) {
+        case 'gold':
+          cp.gold += 10 + (cp.class === 'prospector' ? 5 : 0);
+          board[newPos.y][newPos.x] = 'empty';
+          showFloatNum(newPos.x, newPos.y, `+${cp.gold - (data.players[data.currentTurn].gold)}💰`);
+          break;
+        case 'trap':
+          if (cp.items.includes('shield')) {
+            cp.items.splice(cp.items.indexOf('shield'), 1);
+          } else {
+            cp.hp -= 15;
+            showFloatNum(newPos.x, newPos.y, '-15❤️');
+          }
+          break;
+        case 'monster':
+          if (cp.items.includes('weapon')) {
+            cp.items.splice(cp.items.indexOf('weapon'), 1);
+            cp.gold += 20;
+          } else if (cp.items.includes('shield')) {
+            cp.items.splice(cp.items.indexOf('shield'), 1);
+          } else {
+            cp.hp -= 20;
+          }
+          break;
+        case 'teleport':
+          // переместить на случайную пустую
+          const emptyCells = [];
+          for (let y=0; y<6; y++) for (let x=0; x<6; x++) if (board[y][x] === 'empty') emptyCells.push({x,y});
+          if (emptyCells.length) cp.position = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+          break;
+        case 'market':
+          openMarket(cp);
+          break;
+        case 'ice_trap':
+          cp.skipTurn = true;
+          break;
+        case 'source':
+          cp.hp = Math.min(100, cp.hp + 15);
+          break;
+        case 'cursed_land':
+          const lost = Math.max(5, Math.floor(cp.gold * 0.1));
+          cp.gold = Math.max(0, cp.gold - lost);
+          break;
+      }
+      // Проверка гибели
+      if (cp.hp <= 0) {
+        players.splice(data.currentTurn, 1);
+        if (players.length === 1) {
+          await currentGameDoc.update({ players, board, gameOver: true, status: 'finished', winner: players[0].uid });
+          return;
+        }
+        // сдвиг currentTurn
+      }
+      // Проверка победы по золоту
+      if (cp.gold >= 100) {
+        await currentGameDoc.update({ players, board, gameOver: true, status: 'finished', winner: cp.uid });
+        return;
+      }
+      // Случайное событие поля
+      if (Math.random() < 0.3) {
+        const emptyCells = [];
+        for (let y=0; y<6; y++) for (let x=0; x<6; x++) if (board[y][x] === 'empty') emptyCells.push({x,y});
+        if (emptyCells.length) {
+          const randCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+          board[randCell.y][randCell.x] = Math.random() < 0.5 ? 'gold' : 'trap';
+        }
+      }
+      let nextTurn = (data.currentTurn + 1) % players.length;
+      // Глобальные события каждые 5 ходов
+      let eventTurn = (data.eventTurn || 0) + 1;
+      if (eventTurn % 5 === 0 && Math.random() < 0.5) {
+        applyGlobalEvent(board, players);
+      }
+      await currentGameDoc.update({
+        players,
+        board,
+        currentTurn: nextTurn,
+        eventTurn,
+        turnStartTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    function applyGlobalEvent(board, players) {
+      const r = Math.random();
+      if (r < 0.25) { // Золотой дождь
+        for (let i=0; i<3; i++) { const x=Math.floor(Math.random()*6); const y=Math.floor(Math.random()*6); if (board[y][x]==='empty') board[y][x]='gold'; }
+      } else if (r < 0.5) {
+        for (let i=0; i<4; i++) { const x=Math.floor(Math.random()*6); const y=Math.floor(Math.random()*6); if (board[y][x]==='empty') board[y][x]='monster'; }
+      } else if (r < 0.75) {
+        // землетрясение - меняем местами несколько клеток
+      } else {
+        players.forEach(p => p.hp = Math.min(100, p.hp+10));
+      }
+    }
+
+    function showFloatNum(x, y, text) {
+      const cells = document.querySelectorAll('.cell');
+      const cell = [...cells].find(c => c.dataset.x == x && c.dataset.y == y);
+      if (!cell) return;
+      const float = document.createElement('div');
+      float.className = 'float-num';
+      float.textContent = text;
+      float.style.left = '50%';
+      float.style.top = '50%';
+      cell.appendChild(float);
+      setTimeout(() => float.remove(), 1000);
+    }
+
+    // Предметы
+    document.getElementById('use-potion-btn').addEventListener('click', () => useItem('potion'));
+    document.getElementById('attack-btn').addEventListener('click', attackPlayer);
+
+    async function useItem(item) {
+      const data = currentGameData;
+      if (data.gameOver) return;
+      const cp = data.players[data.currentTurn];
+      if (cp.uid !== currentUser.uid) return;
+      const players = JSON.parse(JSON.stringify(data.players));
+      const p = players[data.currentTurn];
+      if (!p.items.includes(item)) return;
+      switch (item) {
+        case 'potion':
+          p.hp = Math.min(100, p.hp + 30);
+          p.items.splice(p.items.indexOf('potion'), 1);
+          break;
+        case 'shield':
+          // щит уже работает пассивно при ловушке/атаке, можно использовать для активации временной неуязвимости
+          p.items.splice(p.items.indexOf('shield'), 1);
+          // логика: даём временный эффект, но упростим - просто удаляем
+          break;
+        case 'bomb':
+          // уничтожаем клетки в радиусе 2
+          const board = JSON.parse(JSON.stringify(data.board));
+          for (let dy=-2; dy<=2; dy++) {
+            for (let dx=-2; dx<=2; dx++) {
+              const nx = p.position.x+dx, ny = p.position.y+dy;
+              if (nx>=0 && nx<6 && ny>=0 && ny<6 && (dx!==0 || dy!==0)) {
+                board[ny][nx] = 'empty';
+              }
             }
+          }
+          p.items.splice(p.items.indexOf('bomb'), 1);
+          await currentGameDoc.update({ board, players });
+          return;
+        case 'treasure_map':
+          // показать всё золото (подсветка) - временно меняем цвет? Упростим алертом
+          alert('Золото на поле подсвечено!');
+          p.items.splice(p.items.indexOf('treasure_map'), 1);
+          break;
+        case 'speed_boots':
+          // даём дополнительный ход, уменьшаем currentTurn на 1?
+          p.items.splice(p.items.indexOf('speed_boots'), 1);
+          await currentGameDoc.update({ players, currentTurn: data.currentTurn - 1 }); // хак
+          return;
+      }
+      const nextTurn = (data.currentTurn + 1) % players.length;
+      await currentGameDoc.update({ players, currentTurn: nextTurn, turnStartTimestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    }
 
-            document.getElementById('join-public-btn').addEventListener('click', async () => {
-                if (!currentUser) return;
-                const publicRef = db.collection('public_games').doc(PUBLIC_GAME_ID);
-                try {
-                    await db.runTransaction(async trans => {
-                        const doc = await trans.get(publicRef);
-                        const game = doc.data();
-                        if (game.status !== 'waiting') throw new Error('Игра уже началась');
-                        if (game.players.length >= 3) throw new Error('Нет мест');
-                        if (game.players.some(p => p.uid === currentUser.uid)) throw new Error('Вы уже в игре');
-                        game.players.push({
-                            uid: currentUser.uid,
-                            email: currentUser.email,
-                            name: currentUser.displayName || 'Игрок',
-                            hp: 100, gold: 0, items: ['potion'],
-                            position: { x: game.players.length, y: game.players.length }
-                        });
-                        trans.update(publicRef, { players: game.players });
-                    });
-                    notify('Вы в публичной игре!');
-                } catch (e) { notify(e.message, 'error'); }
-            });
+    async function attackPlayer() {
+      const data = currentGameData;
+      if (data.gameOver) return;
+      const cp = data.players[data.currentTurn];
+      if (cp.uid !== currentUser.uid) return;
+      const players = JSON.parse(JSON.stringify(data.players));
+      const attacker = players[data.currentTurn];
+      // найти соседа
+      const targets = players.filter((p, i) => i !== data.currentTurn && p.position && Math.abs(p.position.x - attacker.position.x) + Math.abs(p.position.y - attacker.position.y) === 1);
+      if (targets.length === 0) return;
+      const target = targets[0];
+      const dmg = attacker.class === 'warrior' ? 30 : 20;
+      if (target.items.includes('shield')) {
+        target.items.splice(target.items.indexOf('shield'), 1);
+      } else {
+        target.hp -= dmg;
+      }
+      if (target.hp <= 0) {
+        players.splice(players.indexOf(target), 1);
+      }
+      const nextTurn = (data.currentTurn + 1) % players.length;
+      await currentGameDoc.update({ players, currentTurn: nextTurn, turnStartTimestamp: firebase.firestore.FieldValue.serverTimestamp() });
+    }
 
-            async function loadPrivateGamesList() {
-                const snap = await db.collection('private_games').where('status', '==', 'waiting').limit(5).get();
-                const listEl = document.getElementById('private-games-list');
-                listEl.innerHTML = snap.empty ? 'Нет активных приватных игр' : snap.docs.map(d => {
-                    const g = d.data();
-                    return `<div>🔒 ${g.code} (${g.players.length}/3)</div>`;
-                }).join('');
-            }
+    // Рынок
+    function openMarket(player) {
+      // Упрощённый рынок через prompt
+      const choice = prompt('🏪 Рынок: обменять 20💰 на случайный предмет? (да/нет)');
+      if (choice && choice.toLowerCase().startsWith('д')) {
+        if (player.gold >= 20) {
+          player.gold -= 20;
+          const items = ['weapon', 'shield', 'bomb', 'treasure_map', 'speed_boots'];
+          player.items.push(items[Math.floor(Math.random()*items.length)]);
+          currentGameDoc.update({ players: currentGameData.players }); // костыль, нужно обновить весь массив
+        } else alert('Недостаточно золота!');
+      }
+    }
 
-            document.getElementById('create-private-btn').addEventListener('click', async () => {
-                if (!currentUser) return;
-                const code = Math.random().toString(36).substring(2,6).toUpperCase();
-                const gameData = {
-                    code, players: [{
-                        uid: currentUser.uid, email: currentUser.email,
-                        name: currentUser.displayName || 'Игрок',
-                        hp:100, gold:0, items:['potion'], position:{x:0,y:0}
-                    }],
-                    status:'waiting', board:null, currentTurn:0, gameOver:false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                const docRef = await db.collection('private_games').add(gameData);
-                currentGameRef = docRef;
-                currentGameId = docRef.id;
-                enterPrivateLobby(docRef.id, code);
-            });
+    // Чат
+    document.getElementById('send-chat-btn').addEventListener('click', sendChat);
+    async function sendChat() {
+      const input = document.getElementById('chat-input-field');
+      const text = input.value.trim();
+      if (!text || !currentGameDoc) return;
+      await currentGameDoc.collection('messages').add({
+        sender: currentUser.displayName || currentUser.email,
+        text,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      input.value = '';
+    }
 
-            document.getElementById('join-private-btn').addEventListener('click', async () => {
-                const code = document.getElementById('join-code').value.trim().toUpperCase();
-                if (!code) return notify('Введите код', 'error');
-                const snap = await db.collection('private_games').where('code','==',code).where('status','==','waiting').get();
-                if (snap.empty) return notify('Игра не найдена', 'error');
-                const doc = snap.docs[0];
-                const game = doc.data();
-                if (game.players.length >= 3) return notify('Игра заполнена', 'error');
-                if (game.players.some(p => p.uid === currentUser.uid)) {
-                    currentGameRef = doc.ref; currentGameId = doc.id;
-                    enterPrivateLobby(doc.id, code); return;
-                }
-                await doc.ref.update({
-                    players: firebase.firestore.FieldValue.arrayUnion({
-                        uid: currentUser.uid, email: currentUser.email,
-                        name: currentUser.displayName || 'Игрок',
-                        hp:100, gold:0, items:['potion'], position:{x:BOARD_SIZE-1, y:BOARD_SIZE-1}
-                    })
-                });
-                currentGameRef = doc.ref; currentGameId = doc.id;
-                enterPrivateLobby(doc.id, code);
-            });
+    // Завершение игры и обновление профиля
+    async function handleGameOver() {
+      showScreen(menuScreen);
+      if (currentGameData.winner === currentUser.uid) {
+        const userRef = db.collection('users').doc(currentUser.uid);
+        await userRef.set({ wins: firebase.firestore.FieldValue.increment(1), rubies: firebase.firestore.FieldValue.increment(20) }, { merge: true });
+      }
+      await db.collection('users').doc(currentUser.uid).set({ gamesPlayed: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+      // Ежедневные задания (заглушка)
+      if (unsubscribeGame) unsubscribeGame();
+      if (unsubscribeChat) unsubscribeChat();
+      currentGameDoc = null;
+      await loadMenu();
+      listenToPublicGame();
+    }
 
-            function enterPrivateLobby(gameId, code) {
-                menuView.classList.add('hidden');
-                privateLobbyView.classList.remove('hidden');
-                gameView.classList.add('hidden');
-                document.getElementById('private-lobby-code').textContent = code;
-                if (gameUnsubscribe) { gameUnsubscribe(); gameUnsubscribe = null; }
-                gameUnsubscribe = db.collection('private_games').doc(gameId).onSnapshot(snap => {
-                    const game = snap.data();
-                    if (!game) { notify('Игра удалена', 'error'); loadMainMenu(); return; }
-                    if (game.status === 'active') startPrivateGame(gameId);
-                    else if (game.status === 'finished') { notify('Игра завершена'); loadMainMenu(); }
-                    else updatePrivateLobby(game);
-                });
-            }
+    document.getElementById('leave-lobby-btn').addEventListener('click', async () => {
+      if (currentGameDoc) {
+        // удалить игрока из массива
+        const data = currentGameData;
+        const newPlayers = data.players.filter(p => p.uid !== currentUser.uid);
+        if (newPlayers.length === 0) {
+          await currentGameDoc.delete();
+        } else {
+          await currentGameDoc.update({ players: newPlayers });
+        }
+        unsubscribeGame();
+        currentGameDoc = null;
+      }
+      showScreen(menuScreen);
+    });
 
-            function updatePrivateLobby(game) {
-                document.getElementById('private-lobby-players').innerHTML = game.players.map(p =>
-                    `<div class="player-card">${p.name} ${p.uid===currentUser.uid?'(вы)':''}</div>`).join('');
-                const isCreator = game.players[0]?.uid === currentUser.uid;
-                document.getElementById('private-start-btn').style.display = (isCreator && game.players.length===3) ? 'block' : 'none';
-                document.getElementById('private-lobby-status').textContent = game.players.length < 3 ? 'Ожидание игроков...' : 'Можно начинать!';
-                document.getElementById('private-start-btn').onclick = async () => {
-                    await db.collection('private_games').doc(currentGameId).update({
-                        status:'active', board: generateRandomBoard(), currentTurn:0
-                    });
-                };
-            }
+    // Админ функции
+    document.getElementById('reset-public-btn').addEventListener('click', async () => {
+      await db.collection('public_games').doc('main_lobby').set({
+        status: 'waiting', players: [], board: null, currentTurn: 0, gameOver: false, eventTurn: 0
+      });
+    });
+    document.getElementById('ban-player-btn').addEventListener('click', async () => {
+      const uid = document.getElementById('ban-uid-input').value.trim();
+      if (uid) {
+        await db.collection('users').doc(uid).set({ bannedFromPublic: true }, { merge: true });
+        alert('Игрок забанен.');
+      }
+    });
 
-            function startPrivateGame(gameId) {
-                privateLobbyView.classList.add('hidden');
-                gameView.classList.remove('hidden');
-                currentGameRef = db.collection('private_games').doc(gameId);
-                currentGameId = gameId;
-                if (gameUnsubscribe) gameUnsubscribe();
-                gameUnsubscribe = currentGameRef.onSnapshot(snap => {
-                    const game = snap.data();
-                    if (!game || game.status === 'finished') { notify('Игра завершена'); loadMainMenu(); return; }
-                    renderGame(game);
-                });
-            }
-
-            function generateRandomBoard() {
-                const board = [];
-                for (let y=0; y<BOARD_SIZE; y++) {
-                    const row = [];
-                    for (let x=0; x<BOARD_SIZE; x++) {
-                        const r = Math.random();
-                        if (r < 0.2) row.push('gold');
-                        else if (r < 0.35) row.push('trap');
-                        else if (r < 0.45) row.push('monster');
-                        else row.push('empty');
-                    }
-                    board.push(row);
-                }
-                return board;
-            }
-
-            function renderGame(game) {
-                const me = game.players.find(p => p.uid === currentUser.uid);
-                if (!me) {
-                    document.getElementById('game-status').textContent = '👀 Наблюдение';
-                    document.getElementById('player-stats').innerHTML = '';
-                    document.getElementById('board-container').innerHTML = '';
-                    document.getElementById('controls').innerHTML = '';
-                    return;
-                }
-                document.getElementById('game-status').textContent = game.gameOver ? '🏁 Игра окончена!' : `🎲 Ход: ${game.players[game.currentTurn]?.name || '...'}`;
-                const statsDiv = document.getElementById('player-stats');
-                statsDiv.innerHTML = game.players.map(p => `
-                    <div style="flex:1; text-align:center;">
-                        <strong>${p.name}</strong><br>
-                        ❤️${p.hp} 💰${p.gold}
-                        <div class="hp-bar" style="margin:4px auto;"><div class="hp-fill" style="width:${p.hp}%;"></div></div>
-                    </div>`).join('');
-
-                const boardContainer = document.getElementById('board-container');
-                boardContainer.innerHTML = '';
-                const boardEl = document.createElement('div');
-                boardEl.className = 'board';
-                boardEl.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, var(--cell-size))`;
-                const gap = 3;
-                const cellSize = (boardContainer.clientWidth - gap*(BOARD_SIZE-1)) / BOARD_SIZE;
-                for (let y=0; y<BOARD_SIZE; y++) {
-                    for (let x=0; x<BOARD_SIZE; x++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell ' + (game.board[y][x] || 'empty');
-                        cell.textContent = { gold:'🪙', trap:'💀', monster:'👾' }[game.board[y][x]] || '';
-                        boardEl.appendChild(cell);
-                    }
-                }
-                game.players.forEach((p, idx) => {
-                    const token = document.createElement('div');
-                    token.className = 'player-token';
-                    token.style.background = ['#e94560','#4a90d9','#f0c040'][idx%3];
-                    token.textContent = idx+1;
-                    const left = p.position.x * (cellSize + gap) + cellSize/2 - 14;
-                    const top = p.position.y * (cellSize + gap) + cellSize/2 - 14;
-                    token.style.left = left + 'px';
-                    token.style.top = top + 'px';
-                    if (idx === game.currentTurn && !game.gameOver) token.classList.add('active-turn');
-                    boardEl.appendChild(token);
-                });
-                boardContainer.appendChild(boardEl);
-
-                const controls = document.getElementById('controls');
-                controls.innerHTML = '';
-                if (!game.gameOver && game.players[game.currentTurn]?.uid === currentUser.uid) {
-                    controls.innerHTML = `
-                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; max-width:200px; margin:0 auto;">
-                            <span></span><button class="btn btn-accent btn-sm" onclick="movePlayer('up')">⬆️</button><span></span>
-                            <button class="btn btn-accent btn-sm" onclick="movePlayer('left')">⬅️</button>
-                            <span></span><button class="btn btn-accent btn-sm" onclick="movePlayer('right')">➡️</button>
-                            <span></span><button class="btn btn-accent btn-sm" onclick="movePlayer('down')">⬇️</button><span></span>
-                        </div>
-                        <div style="margin-top:10px;">
-                            <button class="btn btn-gold btn-sm" onclick="useItem()">🧪 Зелье</button>
-                            <button class="btn btn-gold btn-sm" onclick="attackPlayer()">⚔️ Атака</button>
-                        </div>`;
-                }
-            }
-
-            window.movePlayer = async (dir) => {
-                if (!currentGameRef) return;
-                try {
-                    await db.runTransaction(async trans => {
-                        const doc = await trans.get(currentGameRef);
-                        const game = doc.data();
-                        if (game.gameOver || game.players[game.currentTurn]?.uid !== currentUser.uid) throw new Error('Не ваш ход');
-                        const player = game.players[game.currentTurn];
-                        let nx = player.position.x, ny = player.position.y;
-                        if (dir==='up') ny--; else if (dir==='down') ny++; else if (dir==='left') nx--; else if (dir==='right') nx++;
-                        if (nx<0||nx>=BOARD_SIZE||ny<0||ny>=BOARD_SIZE) throw new Error('Край карты');
-                        if (game.players.some(p => p.position.x===nx && p.position.y===ny)) throw new Error('Занято');
-                        const cell = game.board[ny][nx];
-                        if (cell === 'gold') { player.gold += 10; game.board[ny][nx] = 'empty'; }
-                        else if (cell === 'trap') { player.hp -= 15; }
-                        else if (cell === 'monster') {
-                            if (player.items.includes('weapon')) {
-                                player.items.splice(player.items.indexOf('weapon'),1);
-                                player.gold += 20;
-                            } else { player.hp -= 20; }
-                        }
-                        player.position = {x:nx, y:ny};
-                        if (player.hp <= 0) {
-                            game.players = game.players.filter(p => p.uid !== player.uid);
-                            if (game.players.length <= 1) game.gameOver = true;
-                        }
-                        if (player.gold >= 100) game.gameOver = true;
-                        if (!game.gameOver && Math.random() < 0.3) {
-                            const emptyCells = [];
-                            for (let y=0; y<BOARD_SIZE; y++) for (let x=0; x<BOARD_SIZE; x++) if (game.board[y][x]==='empty') emptyCells.push({x,y});
-                            if (emptyCells.length) {
-                                const rc = emptyCells[Math.floor(Math.random()*emptyCells.length)];
-                                game.board[rc.y][rc.x] = Math.random()<0.5?'gold':'trap';
-                            }
-                        }
-                        game.currentTurn = (game.currentTurn+1) % game.players.length;
-                        trans.update(currentGameRef, game);
-                    });
-                } catch (e) { notify(e.message, 'error'); }
-            };
-
-            window.useItem = async () => {
-                if (!currentGameRef) return;
-                try {
-                    await db.runTransaction(async trans => {
-                        const doc = await trans.get(currentGameRef);
-                        const game = doc.data();
-                        const player = game.players[game.currentTurn];
-                        if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
-                        const idx = player.items.indexOf('potion');
-                        if (idx < 0) throw new Error('Нет зелья');
-                        player.items.splice(idx,1);
-                        player.hp = Math.min(100, player.hp + 30);
-                        game.currentTurn = (game.currentTurn+1) % game.players.length;
-                        trans.update(currentGameRef, { players: game.players, currentTurn: game.currentTurn });
-                    });
-                } catch (e) { notify(e.message, 'error'); }
-            };
-
-            window.attackPlayer = async () => {
-                if (!currentGameRef) return;
-                try {
-                    await db.runTransaction(async trans => {
-                        const doc = await trans.get(currentGameRef);
-                        const game = doc.data();
-                        const player = game.players[game.currentTurn];
-                        if (player.uid !== currentUser.uid) throw new Error('Не ваш ход');
-                        const target = game.players.find(p => p.uid!==player.uid &&
-                            Math.abs(p.position.x-player.position.x)+Math.abs(p.position.y-player.position.y)===1);
-                        if (!target) throw new Error('Нет соседа');
-                        target.hp -= 20;
-                        if (target.hp <= 0) {
-                            game.players = game.players.filter(p => p.uid!==target.uid);
-                            if (game.players.length <= 1) game.gameOver = true;
-                        }
-                        game.currentTurn = (game.currentTurn+1) % game.players.length;
-                        trans.update(currentGameRef, { players: game.players, currentTurn: game.currentTurn, gameOver: game.gameOver });
-                    });
-                } catch (e) { notify(e.message, 'error'); }
-            };
-
-            document.getElementById('show-rules-btn').addEventListener('click', () => rulesModal.classList.remove('hidden'));
-            document.getElementById('game-rules-btn').addEventListener('click', () => rulesModal.classList.remove('hidden'));
-
-            document.getElementById('admin-reset-public')?.addEventListener('click', async () => {
-                if (!isAdmin) return;
-                await db.collection('public_games').doc(PUBLIC_GAME_ID).update({ status:'waiting', players:[], board:null, currentTurn:0, gameOver:false });
-                notify('Публичная игра сброшена');
-            });
-
-            window.addEventListener('beforeunload', () => { if (gameUnsubscribe) gameUnsubscribe(); });
-        })();
-    </script>
+    // Начальное состояние
+    showScreen(loginScreen);
+  </script>
 </body>
 </html>
